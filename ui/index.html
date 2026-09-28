@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ELE-TRON</title>
+<style>
+:root{--gb:28px;--ga:.07;--bgb:0px;--dim:.25;--b:rgba(255,255,255,.14);--t:#f2f4fa;--m:#a3abc4;--a:#7c8cff;color-scheme:dark}
+*{box-sizing:border-box;margin:0;font-family:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif}
+html,body{height:100%;overflow:hidden;background:#090b14;color:var(--t)}
+#bg{position:fixed;inset:-50px;background:#090b14 center/cover no-repeat;filter:blur(var(--bgb));z-index:0}
+#bg::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,var(--dim))}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;animation:float 20s ease-in-out infinite alternate}
+.o1{width:520px;height:520px;background:#5b6cff;top:-100px;left:-60px}
+.o2{width:460px;height:460px;background:#ff5fa2;bottom:-120px;right:-40px;animation-delay:-7s}
+.o3{width:380px;height:380px;background:#22d3c5;top:42%;left:46%;opacity:.3;animation-delay:-13s}
+body.hasbg .orb{display:none}
+@keyframes float{to{transform:translate(90px,60px) scale(1.15)}}
+.app{position:relative;z-index:1;display:flex;height:100%;gap:var(--gap,14px);padding:var(--gap,14px)}
+.glass{background:rgba(255,255,255,var(--ga));border:1px solid var(--b);backdrop-filter:blur(var(--gb)) saturate(170%);-webkit-backdrop-filter:blur(var(--gb)) saturate(170%);border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.28)}
+nav{width:210px;padding:16px 10px;display:flex;flex-direction:column;gap:4px;flex:none}
+nav h1{font-size:16px;font-weight:600;padding:6px 12px 16px}
+nav button{display:flex;gap:10px;align-items:center;background:none;border:0;color:var(--m);font-size:14px;padding:10px 12px;border-radius:12px;cursor:pointer;text-align:left;transition:.2s}
+nav button:hover{background:rgba(255,255,255,.08);color:var(--t)}nav button.on{background:rgba(255,255,255,.14);color:var(--t)}
+main{flex:1;padding:28px 32px;overflow:auto}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px}
+.hero{margin-bottom:26px}.hero h1{font-size:34px;font-weight:600;letter-spacing:-.6px}.hero p{color:var(--m);margin-top:6px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:22px}.head h2{font-size:26px;font-weight:600;letter-spacing:-.4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.tile,.card{position:relative;background:rgba(255,255,255,.07);border:1px solid var(--b);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:6px;transition:transform .25s,background .25s,border-color .25s}
+.tile{height:160px;cursor:pointer;justify-content:flex-end}
+.tile:hover,.grid .card:hover{transform:translateY(-4px);background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.28)}
+.ic{position:absolute;top:18px;left:18px;width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:26px;background:linear-gradient(135deg,var(--c));box-shadow:0 8px 22px rgba(0,0,0,.35)}
+b{font-weight:600}.tile b,.card b{font-size:16px}
+small{color:var(--m);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.big{font-size:32px;margin-bottom:6px}
+.fade .tile,.fade .card{animation:up .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*50ms)}
+@keyframes up{from{opacity:0;transform:translateY(14px) scale(.98)}}
+.row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}.grow{flex:1;min-width:120px}
+.in{background:rgba(255,255,255,.09);border:1px solid var(--b);color:var(--t);border-radius:12px;padding:10px 12px;font-size:14px;outline:none;transition:.2s}
+.in:focus{border-color:var(--a);box-shadow:0 0 0 3px rgba(124,140,255,.25)}select.in option{background:#1a1d2e}
+.btn{background:rgba(255,255,255,.11);border:1px solid var(--b);color:var(--t);border-radius:12px;padding:9px 16px;font-size:14px;cursor:pointer;transition:.2s}
+.btn:hover{background:rgba(255,255,255,.2)}.btn:active{transform:scale(.96)}
+.pri{background:linear-gradient(135deg,#6a7bff,#9b5cff);border:0}.pri:hover{filter:brightness(1.12);background:linear-gradient(135deg,#6a7bff,#9b5cff)}
+.dng{color:#ff8095}.chip{padding:8px 14px;border-radius:999px;font-size:13.5px}
+.x{position:absolute;top:12px;right:12px;background:none;border:0;color:var(--m);cursor:pointer;font-size:14px;padding:4px 8px;border-radius:8px}.x:hover{background:rgba(255,255,255,.14);color:#ff8095}
+.wide{max-width:780px;gap:14px;margin-bottom:16px}
+.wide label{display:flex;flex-direction:column;gap:6px;color:var(--m);font-size:13px}
+.wide label.sw{flex-direction:row;justify-content:space-between;align-items:center;color:var(--t);font-size:14px}
+.wide h3{font-size:15px;font-weight:600}
+input[type=checkbox]{appearance:none;width:44px;height:26px;border-radius:13px;background:rgba(255,255,255,.18);position:relative;cursor:pointer;transition:.25s;flex:none}
+input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.25s}
+input[type=checkbox]:checked{background:#5b6cff}input[type=checkbox]:checked::after{transform:translateX(18px)}
+input[type=range]{accent-color:#7c8cff;width:100%}
+.it{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px;border-radius:14px;background:rgba(255,255,255,.05)}
+.tag{font-size:14px;font-weight:600;min-width:110px}
+.note{cursor:pointer;border-left:3px solid var(--nc);box-shadow:0 0 34px -14px var(--nc);min-height:150px}
+.pv{max-height:112px;overflow:hidden;color:#cfd5ea;font-size:13px;line-height:1.55;-webkit-mask-image:linear-gradient(#000 65%,transparent);mask-image:linear-gradient(#000 65%,transparent)}
+.pin{position:absolute;top:12px;right:14px;font-size:13px}
+#ov,#ne{position:fixed;inset:0;display:none;place-items:center;background:rgba(5,6,12,.55);backdrop-filter:blur(10px);z-index:9}
+#ov.on,#ne.on{display:grid}
+.ned{width:min(780px,92%);height:min(580px,88%);padding:22px;display:flex;flex-direction:column;gap:12px;border-top:3px solid var(--nc);animation:pop .4s cubic-bezier(.2,1.2,.3,1)}
+.ned textarea{flex:1;resize:none;line-height:1.65;font-size:15px}.ttl{font-size:21px;font-weight:600}
+.nh,.dots{display:flex;gap:10px;align-items:center}
+.dots i{width:22px;height:22px;border-radius:50%;background:var(--c);cursor:pointer;transition:.2s;border:2px solid transparent}
+.dots i:hover{transform:scale(1.15)}.dots i.on{border-color:#fff}
+.pop{padding:32px 40px;display:flex;flex-direction:column;align-items:center;gap:10px;animation:pop .45s cubic-bezier(.2,1.2,.3,1)}
+@keyframes pop{from{opacity:0;transform:scale(.9)}}
+.num{font-size:84px;font-weight:200;line-height:1;background:linear-gradient(135deg,#8fa0ff,#ff7ab8);-webkit-background-clip:text;background-clip:text;color:transparent}
+#toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%,30px);opacity:0;padding:11px 20px;border-radius:14px;font-size:14px;background:rgba(30,33,52,.92);border:1px solid var(--b);transition:.35s;pointer-events:none;z-index:20}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+:focus-visible{outline:2px solid var(--a);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+<div id="bg"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div></div>
+<div class="app"><nav class="glass" id="nav"></nav><main class="glass" id="main"></main></div>
+<div id="ov"></div><div id="ne"></div><div id="toast"></div>
+<script>
+const inv=(c,a)=>window.pywebview.api[c](a||{});
+const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let S,BG='',DET={},profiles=[],view='home',edit=null,nopen=null,q='',st,tt,timer;
+const NAV=[['home','Home','🏠',''],['workspaces','Workspaces','🚀','#ff8a5c,#ff4f81'],['notes','Notes','📝','#ffd45c,#ffa63d'],['links','Quick Links','🔗','#34d3c5,#2b9cf0'],['apps','Apps','🧩','#a78bfa,#f472b6'],['settings','Settings','⚙️','#94a3b8,#64748b']];
+const APPS={chrome:['Chrome','🌐'],discord:['Discord','💬'],steam:['Steam','🎮'],whatsapp:['WhatsApp','🟢'],telegram:['Telegram','✈️']};
+const NC=['#7c8cff','#ff7ab8','#ffd45c','#34d3c5','#ff8a5c','#a78bfa'];
+const seed=()=>({settings:{name:'Dark Defender',autoLaunch:true,delay:5,defaultWs:'w1',autostart:false},theme:{bgBlur:0,dim:25,gBlur:28,gAlpha:7,fit:'cover',gap:14},workspaces:[{id:'w1',name:'Work',icon:'💼',items:[{kind:'chrome',target:'https://proton.me/mail',profile:'Default'}]}],notes:[],links:[],apps:[]});
+const save=()=>{clearTimeout(st);st=setTimeout(()=>inv('save_data',{data:S}),300)};
+function toast(m){const t=$('#toast');t.textContent=m||'';t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3000)}
+const head=(t,a='')=>`<div class="head"><h2>${t}</h2><div class="row" style="margin:0">${a}</div></div>`;
+const W=id=>S.workspaces.find(w=>w.id==id),N=id=>S.notes.find(n=>n.id==id);
+const wc=b=>b.trim().split(/\s+/).filter(Boolean).length;
+const cnt=k=>k=='workspaces'?S.workspaces.length:k=='notes'?S.notes.length:S[k].length;
+const popts=p=>(profiles.length?profiles:[{dir:'Default',name:'Default'}]).map(x=>`<option value="${esc(x.dir)}" ${x.dir==p?'selected':''}>${esc(x.name||x.dir)}${x.email?' · '+esc(x.email):''}</option>`).join('');
+
+function applyTheme(){const t=S.theme,r=document.documentElement.style;r.setProperty('--gb',t.gBlur+'px');r.setProperty('--ga',t.gAlpha/100);r.setProperty('--bgb',t.bgBlur+'px');r.setProperty('--dim',t.dim/100);r.setProperty('--gap',t.gap+'px');$('#bg').style.backgroundImage=BG?`url(${BG})`:'';$('#bg').style.backgroundSize={cover:'cover',contain:'contain',stretch:'100% 100%',center:'auto'}[t.fit]||'cover';document.body.classList.toggle('hasbg',!!BG)}
+const th=(k,v)=>{S.theme[k]=v;applyTheme();save()};
+function pickBg(el){const f=el.files[0];if(!f)return;const img=new Image();img.onload=()=>{const k=Math.min(1,1920/img.width),c=document.createElement('canvas');c.width=img.width*k;c.height=img.height*k;c.getContext('2d').drawImage(img,0,0,c.width,c.height);BG=c.toDataURL('image/jpeg',.86);inv('save_bg',{data:BG});applyTheme();toast('Background updated')};img.src=URL.createObjectURL(f)}
+function clearBg(){BG='';inv('save_bg',{data:''});applyTheme();toast('Background removed')}
+
+const greet=()=>{const h=new Date().getHours();return h<12?'Good morning':h<18?'Good afternoon':'Good evening'};
+const stamp=()=>{const d=new Date();return d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})};
+setInterval(()=>{const a=$('#hd');if(a){a.textContent=stamp();$('#hg').textContent=greet()+', '+S.settings.name}},15000);
+const rng=(l,k,min,max,u)=>`<label>${l}<input type="range" min="${min}" max="${max}" value="${S.theme[k]}" oninput="th('${k}',+this.value)"></label>`;
+const V={
+home(){const d=new Date(),h=d.getHours();
+ return `<div class="hero"><h1 id="hg">${greet()}, ${esc(S.settings.name)}</h1><p id="hd">${stamp()}</p></div><div class="grid">`+
+ NAV.slice(1).map((n,i)=>`<div class="tile" style="--i:${i};--c:${n[3]}" onclick="go('${n[0]}')"><div class="ic">${n[2]}</div><b>${n[1]}</b><small>${n[0]=='settings'?'Startup and appearance':cnt(n[0])+' saved'}</small></div>`).join('')+'</div>'},
+workspaces(){return head('Workspaces','<button class="btn pri" onclick="addWs()">New workspace</button>')+'<div class="grid">'+
+ S.workspaces.map((w,i)=>`<div class="card" style="--i:${i}"><div class="big">${esc(w.icon)}</div><b>${esc(w.name)}</b><small>${w.items.length} items${S.settings.defaultWs==w.id?' · default':''}</small><div class="row"><button class="btn pri" onclick="run('${w.id}')">Launch</button><button class="btn" onclick="editWs('${w.id}')">Edit</button></div></div>`).join('')+'</div>'},
+wsedit(){const w=W(edit);if(!w)return V.workspaces();const id=w.id;
+ const chips=Object.keys(APPS).filter(k=>DET[k]).map(k=>`<button class="btn chip" onclick="addItem('${id}','${k}')">${APPS[k][1]} ${APPS[k][0]}</button>`).join('');
+ const rows=w.items.map((it,i)=>{const del=`<button class="btn" onclick="delItem('${id}',${i})">Remove</button>`;
+  if(it.kind=='app')return `<div class="it"><span class="tag">${APPS[it.app][1]} ${APPS[it.app][0]}</span><span class="grow"><small>${DET[it.app]?'Detected on this PC':'Not found on this PC'}</small></span>${del}</div>`;
+  if(it.kind=='chrome')return `<div class="it"><span class="tag">🌐 Chrome</span><select class="in" onchange="iset('${id}',${i},'profile',this.value)">${popts(it.profile)}</select><input class="in grow" placeholder="Website to open (optional)" value="${esc(it.target)}" oninput="iset('${id}',${i},'target',this.value)">${del}</div>`;
+  return `<div class="it"><span class="tag">🧩 Custom</span><input class="in grow" placeholder="Path to app, file, folder or URL" value="${esc(it.target)}" oninput="iset('${id}',${i},'target',this.value)"><button class="btn" onclick="browse('${id}',${i},0)">File</button><button class="btn" onclick="browse('${id}',${i},1)">Folder</button>${del}</div>`}).join('');
+ return head('Edit workspace','<button class="btn" onclick="run(\''+id+'\')">Test launch</button><button class="btn pri" onclick="go(\'workspaces\')">Done</button>')+
+ `<div class="card wide"><div class="row" style="margin:0"><input class="in" style="width:72px" value="${esc(w.icon)}" oninput="wset('${id}','icon',this.value)"><input class="in grow" value="${esc(w.name)}" oninput="wset('${id}','name',this.value)"></div>${rows||'<small>Nothing here yet. Add an app below.</small>'}
+ <h3>Add to this workspace</h3><div class="row" style="margin:0">${chips}<button class="btn chip" onclick="addItem('${id}','open')">＋ Other app / file / folder</button></div>
+ <button class="btn dng" style="align-self:flex-start" onclick="delWs('${id}')">Delete workspace</button></div>`},
+notes(){return head('Notes',`<input class="in" placeholder="Search notes" value="${esc(q)}" oninput="q=this.value;$('#ng').innerHTML=noteGrid()"><button class="btn pri" onclick="addNote()">New note</button>`)+`<div class="grid" id="ng">${noteGrid()}</div>`},
+settings(){const s=S.settings;return head('Settings')+`<div class="card wide"><h3>Startup</h3>
+<label>Your name<input class="in" value="${esc(s.name)}" oninput="S.settings.name=this.value;save()"></label>
+<label class="sw"><span>Start with Windows</span><input type="checkbox" ${s.autostart?'checked':''} onchange="setAuto(this)"></label>
+<label class="sw"><span>Auto-launch default workspace after login</span><input type="checkbox" ${s.autoLaunch?'checked':''} onchange="S.settings.autoLaunch=this.checked;save()"></label>
+<label>Default workspace<select class="in" onchange="S.settings.defaultWs=this.value;save()">${S.workspaces.map(w=>`<option value="${w.id}" ${w.id==s.defaultWs?'selected':''}>${esc(w.name)}</option>`).join('')}</select></label>
+<label>Countdown before launch (seconds)<input class="in" type="number" min="1" max="60" value="${s.delay}" oninput="S.settings.delay=+this.value||5;save()"></label></div>
+<div class="card wide"><h3>Appearance</h3><div class="row" style="margin:0"><label class="btn pri" style="cursor:pointer">Choose background image<input type="file" accept="image/*" hidden onchange="pickBg(this)"></label><button class="btn" onclick="clearBg()">Remove image</button></div>
+<label>Image fit<select class="in" onchange="th('fit',this.value)">${[['cover','Fill (keeps proportions, crops edges)'],['contain','Fit (whole image, no cropping)'],['stretch','Stretch (fills window, may distort)'],['center','Original size, centered']].map(o=>`<option value="${o[0]}" ${S.theme.fit==o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></label>${rng('Background blur (blurs the whole image)','bgBlur',0,40)}${rng('Background dimming','dim',0,80)}${rng('Glass blur (blurs only behind the panels)','gBlur',0,60)}${rng('Glass tint','gAlpha',2,30)}${rng('Window margin (shows the sharp image around the glass)','gap',6,48)}</div>`}
+};
+const coll=(k,t,ph)=>head(t)+`<div class="row" style="margin:0 0 20px"><input id="cl" class="in" placeholder="Name"><input id="ct" class="in grow" placeholder="${ph}"><button class="btn pri" onclick="addC('${k}')">Add</button></div><div class="grid">`+
+ S[k].map((c,i)=>`<div class="card" style="--i:${i};cursor:pointer" onclick="openC('${k}',${i})"><div class="big">${k=='links'?'🔗':'🧩'}</div><b>${esc(c.label)}</b><small>${esc(c.target)}</small><button class="x" onclick="event.stopPropagation();delC('${k}',${i})">✕</button></div>`).join('')+'</div>';
+V.links=()=>coll('links','Quick Links','https://…');
+V.apps=()=>coll('apps','Apps','Path to app or folder');
+
+const prev=b=>esc(b).split('\n').slice(0,7).map(l=>l.replace(/^- \[ \]/,'☐').replace(/^- \[x\]/i,'☑')).join('<br>');
+const noteGrid=()=>{const l=S.notes.filter(n=>(n.title+' '+n.body).toLowerCase().includes(q.toLowerCase())).sort((a,b)=>(b.pin-a.pin)||(b.ts-a.ts));
+ return l.length?l.map((n,i)=>`<div class="card note" style="--i:${i};--nc:${n.color}" onclick="openNote('${n.id}')">${n.pin?'<span class="pin">📌</span>':''}<b>${esc(n.title||'Untitled')}</b><div class="pv">${prev(n.body)}</div><small>${new Date(n.ts).toLocaleDateString(undefined,{day:'numeric',month:'short'})} · ${wc(n.body)} words</small></div>`).join(''):'<small>'+(q?'No notes match your search.':'No notes yet. Select New note to start.')+'</small>'};
+function addNote(){const n={id:uid(),title:'',body:'',color:NC[0],pin:false,ts:Date.now()};S.notes.unshift(n);save();openNote(n.id)}
+function openNote(id){nopen=id;const n=N(id);
+ $('#ne').innerHTML=`<div class="glass ned" style="--nc:${n.color}"><div class="nh"><input class="in ttl grow" id="nt" placeholder="Title" value="${esc(n.title)}" oninput="nset('title',this.value)"><button class="btn" onclick="npin()">${n.pin?'📌 Pinned':'📌 Pin'}</button><button class="btn pri" onclick="closeNote()">Done</button></div>
+ <div class="dots">${NC.map(c=>`<i style="--c:${c}" class="${c==n.color?'on':''}" onclick="ncol('${c}')"></i>`).join('')}<span class="grow"></span><button class="btn" onclick="ncheck()">＋ Checklist item</button><button class="btn dng" onclick="ndel()">Delete</button></div>
+ <textarea id="nb" class="in" placeholder="Write something" oninput="nset('body',this.value)">${esc(n.body)}</textarea><small id="ni">${wc(n.body)} words · Saved</small></div>`;
+ $('#ne').classList.add('on');$(n.title?'#nb':'#nt').focus()}
+function nset(k,v){const n=N(nopen);n[k]=v;n.ts=Date.now();save();$('#ni').textContent=wc(n.body)+' words · Saved'}
+function npin(){const n=N(nopen);n.pin=!n.pin;save();openNote(nopen)}
+function ncol(c){N(nopen).color=c;save();openNote(nopen)}
+function ncheck(){const t=$('#nb');t.value+=(t.value&&!t.value.endsWith('\n')?'\n':'')+'- [ ] ';nset('body',t.value);t.focus()}
+function ndel(){S.notes=S.notes.filter(n=>n.id!=nopen);save();closeNote()}
+function closeNote(){$('#ne').classList.remove('on');nopen=null;render()}
+
+function render(a){
+ $('#nav').innerHTML='<h1>◐ ELE-TRON</h1>'+NAV.map(n=>`<button class="${view==n[0]||(view=='wsedit'&&n[0]=='workspaces')?'on':''}" onclick="go('${n[0]}')"><span>${n[2]}</span>${n[1]}</button>`).join('');
+ $('#main').innerHTML=`<div class="${a?'fade':''}" style="height:100%">${V[view]()}</div>`}
+function go(v){view=v;render(1)}
+function wset(id,k,v){W(id)[k]=v;save()}
+function iset(id,i,k,v){W(id).items[i][k]=v;save()}
+function addWs(){const w={id:uid(),name:'New workspace',icon:'✨',items:[]};S.workspaces.push(w);save();editWs(w.id)}
+function editWs(id){edit=id;go('wsedit')}
+function addItem(id,k){W(id).items.push(k=='chrome'?{kind:'chrome',target:'',profile:profiles[0]?.dir||'Default'}:k=='open'?{kind:'open',target:''}:{kind:'app',app:k});save();render()}
+function delItem(id,i){W(id).items.splice(i,1);save();render()}
+function delWs(id){S.workspaces=S.workspaces.filter(w=>w.id!=id);if(S.settings.defaultWs==id)S.settings.defaultWs=S.workspaces[0]?.id||'';save();go('workspaces')}
+async function browse(id,i,folder){const p=await inv('pick',{folder:!!folder});if(p){iset(id,i,'target',p);render()}}
+function addC(k){const l=$('#cl').value.trim(),t=$('#ct').value.trim();if(!t)return toast('Enter a path or URL');S[k].push({label:l||t,target:t});save();render(1)}
+function delC(k,i){S[k].splice(i,1);save();render()}
+async function openC(k,i){try{await inv('launch',{items:[{kind:'open',target:S[k][i].target}]});toast('Opened '+S[k][i].label)}catch(e){toast(String(e))}}
+async function run(id,quit){const w=W(id);if(!w)return;try{const r=await inv('launch',{items:w.items});const m=r&&r.missing||[];toast(m.length?'Not found: '+m.join(', '):'Launched '+w.name);if(quit)setTimeout(()=>inv('quit'),m.length?3500:1500)}catch(e){toast(String(e))}}
+async function setAuto(el){try{const m=await inv('set_autostart',{on:el.checked});S.settings.autostart=el.checked;save();toast(m)}catch(e){el.checked=!el.checked;toast(String(e))}}
+
+function countdown(){const o=$('#ov');let n=+S.settings.delay||5;
+ o.innerHTML=`<div class="glass pop"><small>Launching your workspace in</small><div class="num" id="num">${n}</div><select id="cw" class="in">${S.workspaces.map(w=>`<option value="${w.id}" ${w.id==S.settings.defaultWs?'selected':''}>${esc(w.icon+' '+w.name)}</option>`).join('')}</select><div class="row"><button class="btn pri" onclick="fire()">Launch now</button><button class="btn" onclick="stop()">Cancel</button></div></div>`;
+ o.classList.add('on');timer=setInterval(()=>{n--;if(n<=0)fire();else $('#num').textContent=n},1000)}
+function stop(){clearInterval(timer);$('#ov').classList.remove('on')}
+function fire(){const id=$('#cw').value;stop();run(id,true)}
+
+window.addEventListener('pywebviewready',async()=>{
+ const d=seed();S=(await inv('load_data'))||d;S.settings={...d.settings,...S.settings};S.theme={...d.theme,...S.theme};
+ ['workspaces','notes','links','apps'].forEach(k=>S[k]=S[k]||[]);
+ S.notes.forEach(n=>{n.color=n.color||NC[0];n.pin=!!n.pin;n.ts=n.ts||Date.now();n.body=n.body||'';n.title=n.title||''});
+ [BG,profiles,DET]=await Promise.all([inv('load_bg'),inv('chrome_profiles'),inv('detect_apps')]);
+ BG=BG||'';applyTheme();render(1);
+ if(await inv('is_autostart')&&S.settings.autoLaunch&&S.workspaces.length)countdown();
+});
+</script></body></html>
