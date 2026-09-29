@@ -422,6 +422,11 @@ class Api:
                 st = tl.start_time.total_seconds() if tl and tl.start_time else 0
                 en = tl.end_time.total_seconds() if tl and tl.end_time else 0
                 dur = max(0, en - st)
+                if not dur and tl:
+                    # Some apps (Apple Music) leave start/end at 0 but still report seek range
+                    mn = tl.min_seek_time.total_seconds() if tl.min_seek_time else 0
+                    mx = tl.max_seek_time.total_seconds() if tl.max_seek_time else 0
+                    dur = max(0, mx - mn)
                 pos = max(0, (tl.position.total_seconds() if tl and tl.position else 0) - st)
                 if tl:
                     pos = _live_pos(tl, title, pos, dur, playing)
@@ -446,10 +451,12 @@ class Api:
                 if action == "playpause":
                     await s.try_toggle_play_pause_async()
                 elif action == "pause":
-                    ok = await s.try_pause_async()
-                    if not ok:
-                        pb = s.get_playback_info()
-                        if pb and pb.playback_status == PBStatus.PLAYING:
+                    pb = s.get_playback_info()
+                    if pb and pb.playback_status == PBStatus.PLAYING:
+                        await s.try_pause_async()
+                        pb2 = s.get_playback_info()
+                        if pb2 and pb2.playback_status == PBStatus.PLAYING:
+                            # try_pause_async silently no-oped on this app -> use toggle instead
                             await s.try_toggle_play_pause_async()
                 elif action == "next":
                     await s.try_skip_next_async()

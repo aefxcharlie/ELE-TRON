@@ -293,7 +293,7 @@ function mqMeasure(m){const i=m.firstElementChild,t=m.dataset.t||'',w=m.clientWi
 function initMarquee(root){(root||document).querySelectorAll('.mq').forEach(m=>{if(m.classList.contains('hov')&&!m.closest('.now'))return;mqMeasure(m)})}
 
 /* ---- what is audible / shown right now ---- */
-const useLocal=()=>!isLive(S.settings.musicSource)||mplaying;
+const useLocal=()=>!isLive(S.settings.musicSource);
 function nowInfo(){
  if(useLocal()){const t=curTrack()||{};return{title:t.title||'Nothing playing',artist:t.artist||(t.title?'':(S.settings.musicSource||'').toUpperCase()+' library'),art:t._art||null,playing:mplaying,pos:player.currentTime||0,dur:isFinite(player.duration)?player.duration:(t.duration||0),live:false}}
  const nm=MNAV.find(n=>n[0]===S.settings.musicSource)[1],el=AM.playing?(performance.now()-AM._t)/1000:0;
@@ -320,8 +320,7 @@ function observeArt(){if(!('IntersectionObserver' in window))return;const b=$('#
  artObs.disconnect();b.querySelectorAll('[data-id]').forEach(el=>artObs.observe(el))}
 
 /* ---- transport ---- */
-function selectSource(src){if(isLive(src)&&mplaying){player.pause();mplaying=false}/* stop local audio so its state can't leak into a live tab; pause() fires its event async, so flip the flag now too */
- S.settings.musicSource=src;save();AM=AM0();_bh='';mnow=false;const b=$('#mbody');if(b)b.scrollTop=0;
+function selectSource(src){S.settings.musicSource=src;save();AM=AM0();_bh='';mnow=false;const b=$('#mbody');if(b)b.scrollTop=0;
  if(isLive(src))startAMPoll();else{stopAMPoll();if(MLIB[src]==null)loadLib(src)}
  renderSidebar();renderPanel();renderWidget();renderFoot()}
 function setView(v){S.settings.musicView=v;save();renderPanel()}
@@ -350,8 +349,11 @@ async function amTick(){if(amBusy||document.hidden)return;const src=S.settings.m
  try{const d=await inv('music_now_playing',{source:src,artkey:AM.artkey||''});if(S.settings.musicSource!==src)return;
   const na=AM0();if(d){Object.assign(na,d);if(d.artkey&&d.artkey===AM.artkey&&!d.art)na.art=AM.art}
   const ch=na.title!==AM.title||na.artist!==AM.artist||na.art!==AM.art||na.playing!==AM.playing;
+  if(na.playing&&mplaying){player.pause();mplaying=false}/* AM/Spotify started playing (detected via poll) -> stop local so only one plays */
   AM=na;if(d&&d.title)recordRecent(d);if(ch)refreshUI();tick()}
  catch(e){}finally{amBusy=false}}
+async function bgTick(){if(document.hidden)return;for(const k of['applemusic','spotify']){if(k===S.settings.musicSource)continue;
+  try{const d=await inv('music_now_playing',{source:k,artkey:''});if(d&&d.playing&&mplaying){player.pause();mplaying=false;refreshUI();break}}catch(e){}}}
 async function startAMPoll(){stopAMPoll();await amTick();amTimer=setInterval(amTick,2000)}
 function stopAMPoll(){clearInterval(amTimer);amTimer=null}
 function amCtl(action){const src=S.settings.musicSource;
@@ -434,6 +436,7 @@ function toggleMusicPanel(){mopen=!mopen;$('#mp').classList.toggle('open',mopen)
 
 function initMusicUI(){
  setInterval(tick,250);
+ setInterval(()=>{if(mplaying&&!isLive(S.settings.musicSource))bgTick()},2000);
  const mp=$('#mp');let rt;if('ResizeObserver' in window)new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>initMarquee(mp),120)}).observe(mp);
  let winRt;window.addEventListener('resize',()=>{document.body.classList.add('resizing');clearTimeout(winRt);winRt=setTimeout(()=>document.body.classList.remove('resizing'),180)});
  document.addEventListener('mouseover',e=>{const r=e.target.closest&&e.target.closest('.trow,.tcard');if(r)r.querySelectorAll('.mq.hov').forEach(mqMeasure)});
