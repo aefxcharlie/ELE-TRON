@@ -107,6 +107,9 @@ input[type=range]{accent-color:#7c8cff;width:100%}
 .tcard b{display:block;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tcard small{display:block;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mempty{padding:30px 16px;color:var(--m);font-size:13.5px;text-align:center}
+.npwrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 20px 18px;text-align:center}
+.npart{width:min(200px,40vh);height:min(200px,40vh);border-radius:18px;background:linear-gradient(135deg,#3a3f66,#242840);background-size:cover;background-position:center;display:grid;place-items:center;font-size:42px;box-shadow:0 18px 40px rgba(0,0,0,.4)}
+.npmeta{width:100%}.npmeta b{font-size:18px;display:block}.npmeta small{font-size:13px;display:block;margin-top:4px}
 .mbar{height:6px;background:rgba(255,255,255,.14);border-radius:3px;overflow:hidden;flex:1;cursor:pointer;transition:height .15s}
 .mbar:hover{height:8px}
 .mbar i,.cbar i{display:block;height:100%;background:linear-gradient(90deg,#7c8cff,#ff7ab8);width:0%;transition:width .25s linear}
@@ -259,16 +262,17 @@ const MNAV=[['mp3','MP3','🎵'],['wav','WAV','🎶'],['applemusic','Apple Music
 const isLive=k=>k==='applemusic'||k==='spotify';
 let MLIB={mp3:null,wav:null},MEXTRA={mutagen:false,smtc:false,tray:false};
 const AM0=()=>({title:'',artist:'',album:'',art:null,artkey:'',playing:false,position:0,duration:0,_t:performance.now()});
-let AM=AM0(),mplaying=false,mqueue=[],mIdx=-1,mqKind='',amTimer=null,amBusy=false,mopen=false,lastRec='';
+let AM=AM0(),mplaying=false,mqueue=[],mIdx=-1,mqKind='',amTimer=null,amBusy=false,mopen=false,lastRec='',mnow=false;
 let _ch='',_th='',_bh='',_fh='',artObs=null;
 const player=new Audio();
 player.addEventListener('ended',()=>musicNext());
+player.addEventListener('error',()=>{if(curTrack())toast('Could not play "'+(curTrack().title||'this track')+'"');musicNext()});
 player.addEventListener('play',()=>{mplaying=true;refreshUI()});
 player.addEventListener('pause',()=>{mplaying=false;refreshUI()});
 const refreshUI=()=>{renderWidget();renderFoot();if(mopen)renderPanel()};
 
-function fileUrl(p){return 'file:///'+encodeURI(p.replace(/\\/g,'/'))}
-function curTrack(){return mIdx>=0?mqueue[mIdx]:null}
+function fileUrl(p){return 'file:///'+encodeURI(p.replace(/\\/g,'/')).replace(/#/g,'%23').replace(/\?/g,'%3F')}
+function curTrack(){const lib=MLIB[mqKind];return mIdx>=0&&Array.isArray(lib)?lib[mIdx]:null}
 function fmtT(s){s=Math.max(0,Math.round(s||0));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 const artStyle=a=>a?`background-image:url(${a})`:'';
 
@@ -308,14 +312,17 @@ function observeArt(){if(!('IntersectionObserver' in window))return;const b=$('#
  artObs.disconnect();b.querySelectorAll('[data-id]').forEach(el=>artObs.observe(el))}
 
 /* ---- transport ---- */
-function selectSource(src){S.settings.musicSource=src;save();AM=AM0();_bh='';const b=$('#mbody');if(b)b.scrollTop=0;
+function selectSource(src){S.settings.musicSource=src;save();AM=AM0();_bh='';mnow=false;const b=$('#mbody');if(b)b.scrollTop=0;
  if(isLive(src))startAMPoll();else{stopAMPoll();if(MLIB[src]==null)loadLib(src)}
  renderSidebar();renderPanel();renderWidget();renderFoot()}
 function setView(v){S.settings.musicView=v;save();renderPanel()}
 function playAt(kind,i){const lib=MLIB[kind];if(!Array.isArray(lib)||!lib[i])return;mqueue=lib;mqKind=kind;mIdx=i;const t=lib[i];
- player.src=fileUrl(t.path);player.currentTime=0;player.play()?.catch?.(()=>{});ensureArt(t);refreshUI()}
-function musicNext(){if(useLocal()){if(mIdx<0||!mqueue.length)return;playAt(mqKind,(mIdx+1)%mqueue.length)}else amCtl('next')}
-function musicPrev(){if(useLocal()){if(mIdx<0||!mqueue.length)return;playAt(mqKind,(mIdx-1+mqueue.length)%mqueue.length)}else amCtl('prev')}
+ mnow=true;player.src=fileUrl(t.path);player.currentTime=0;player.play()?.catch?.(()=>{});ensureArt(t);refreshUI()}
+function musicNext(){if(useLocal()){const lib=MLIB[mqKind];if(mIdx<0||!Array.isArray(lib)||!lib.length)return;
+  playAt(mqKind,lib.length<=1?0:(mIdx+1)%lib.length)}else amCtl('next')}
+function musicPrev(){if(useLocal()){const lib=MLIB[mqKind];if(mIdx<0||!Array.isArray(lib)||!lib.length)return;
+  playAt(mqKind,lib.length<=1?0:(mIdx-1+lib.length)%lib.length)}else amCtl('prev')}
+function backToList(){mnow=false;renderPanel()}
 function togglePlay(){if(useLocal()){if(!curTrack())return;player.paused?player.play()?.catch?.(()=>{}):player.pause()}else amCtl('playpause')}
 function seekBar(e,el){const n=nowInfo();if(!n.dur)return;const r=el.getBoundingClientRect(),p=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))*n.dur;
  if(n.live){AM.position=p;AM._t=performance.now();inv('music_control',{action:'seek',source:S.settings.musicSource,pos:p});tick()}else player.currentTime=p}
@@ -376,6 +383,11 @@ function libRows(kind){const lib=MLIB[kind];
   return '<div class="mlist">'+lib.map((t,i)=>`<div class="trow ${now(i)}" data-id="${t._id}" onclick="playAt('${kind}',${i})"><div class="ta" style="${artStyle(t._art)}">${t._art?'':'🎵'}</div><div class="ti">${mq(t.title,'b',1)}<small>${esc(t.artist||t.album||'')}</small></div><small>${t.duration?fmtT(t.duration):''}</small></div>`).join('')+'</div>';
  return '<div class="tgrid">'+lib.map((t,i)=>`<button class="tcard ${now(i)}" data-id="${t._id}" onclick="playAt('${kind}',${i})"><div class="ta" style="${artStyle(t._art)}">${t._art?'':'🎵'}</div>${mq(t.title,'b',1)}<small>${esc(t.artist||'')}</small></button>`).join('')+'</div>'}
 
+function nowPlayingHtml(){const t=curTrack();if(!t)return '<div class="mempty">Nothing playing.</div>';const n=nowInfo();
+ return `<div class="npwrap"><div class="npart" style="${artStyle(n.art)}">${n.art?'':'🎵'}</div>
+ <div class="npmeta">${mq(n.title,'b')}${mq(n.artist||'Unknown artist','small')}</div>
+ <div class="ftl" style="padding:0 10px;width:100%"><small class="tcur">0:00</small><div class="mbar pbar" onclick="seekBar(event,this)"><i></i></div><small class="tdur">--:--</small></div>
+ <div class="fctl" style="justify-content:center;gap:18px;margin-top:4px"><button class="mctl" data-tip="Previous" onclick="musicPrev()">⏮</button><button class="mctl big" onclick="togglePlay()">${n.playing?'⏸':'▶'}</button><button class="mctl" data-tip="Next" onclick="musicNext()">⏭</button></div></div>`}
 function amHtml(){const src=S.settings.musicSource,m=MNAV.find(n=>n[0]===src),nm=m[1],ic=m[2];
  const ob=`<button class="btn" style="margin-top:10px" onclick="inv('launch',{items:[{kind:'app',app:'${src}'}]})">Open ${nm}</button>`;
  if(!MEXTRA.smtc)return `<div class="mempty">Live ${nm} sync needs the Windows media package.<br><small>pip install -r requirements.txt</small><br>${ob}</div>`;
@@ -385,9 +397,11 @@ function amHtml(){const src=S.settings.musicSource,m=MNAV.find(n=>n[0]===src),nm
 
 function setBody(h){const b=$('#mbody');if(!b||h===_bh)return;const st=b.scrollTop;b.innerHTML=h;b.scrollTop=st;_bh=h;initMarquee(b);observeArt()}
 function renderPanel(){const top=$('#mtop');if(!top)return;const src=S.settings.musicSource,m=MNAV.find(n=>n[0]===src);
- const th=`<b class="mtt">${m[2]} ${m[1]}</b><div class="row" style="margin:0">${isLive(src)?'':viewToggleHtml()}<button class="mctl" data-tip="Collapse" onclick="toggleMusicPanel()">⤡</button></div>`;
+ const showNow=!isLive(src)&&mnow&&curTrack();
+ const th=showNow?`<button class="mctl" data-tip="Back to library" onclick="backToList()">←</button><b class="mtt">Now Playing</b><div class="row" style="margin:0"><button class="mctl" data-tip="Collapse" onclick="toggleMusicPanel()">⤡</button></div>`
+  :`<b class="mtt">${m[2]} ${m[1]}</b><div class="row" style="margin:0">${isLive(src)?'':viewToggleHtml()}<button class="mctl" data-tip="Collapse" onclick="toggleMusicPanel()">⤡</button></div>`;
  if(th!==_th){top.innerHTML=th;_th=th}
- setBody(isLive(src)?amHtml():libRows(src));
+ setBody(showNow?nowPlayingHtml():(isLive(src)?amHtml():libRows(src)));
  if(!isLive(src)&&MLIB[src]==null)loadLib(src);
  if(isLive(src)&&(S.settings.recent||[]).length)['mp3','wav'].forEach(k=>{if(MLIB[k]==null)setTimeout(()=>loadLib(k),0)})}
 
