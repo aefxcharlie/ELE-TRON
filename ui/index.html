@@ -327,6 +327,7 @@ function selectSource(src){if(isLive(src)&&mplaying){player.pause();mplaying=fal
 function setView(v){S.settings.musicView=v;save();renderPanel()}
 async function playAt(kind,i){const lib=MLIB[kind];if(!Array.isArray(lib)||!lib[i])return;mqueue=lib;mqKind=kind;mIdx=i;const t=lib[i];
  mnow=true;mLoading=true;player.pause();refreshUI();
+ inv('music_control',{action:'pause',source:'applemusic'});inv('music_control',{action:'pause',source:'spotify'});/* only one thing should play at a time */
  const src=await inv('music_stream',{path:t.path});
  if(mqKind!==kind||mIdx!==i)return;/* user already moved on while this was loading */
  mLoading=false;
@@ -406,7 +407,7 @@ function nowPlayingHtml(){const t=curTrack();if(!t)return '<div class="mempty">N
 function amHtml(){const src=S.settings.musicSource,m=MNAV.find(n=>n[0]===src),nm=m[1],ic=m[2];
  const ob=`<button class="btn" style="margin-top:10px" onclick="inv('launch',{items:[{kind:'app',app:'${src}'}]})">Open ${nm}</button>`;
  if(!MEXTRA.smtc)return `<div class="mempty">Live ${nm} sync needs the Windows media package.<br><small>pip install -r requirements.txt</small><br>${ob}</div>`;
- const head=AM.title?`<div class="amcard"><div class="ta ${AM.playing?'live':''}" style="${artStyle(AM.art)}">${AM.art?'':ic}</div><div class="amt">${mq(AM.title)}${mq(AM.artist+(AM.album?' · '+AM.album:''),'small')}</div></div>`
+ const head=AM.title?`<div class="amcard"><div class="ta ${AM.playing?'live':''}" style="${artStyle(AM.art)}">${AM.art?'':ic}</div><div class="amt">${mq(AM.title)}${mq(AM.artist+(AM.album?' · '+AM.album:''),'small')}<div class="ftl" style="margin-top:10px"><small class="tcur">0:00</small><div class="mbar pbar" onclick="seekBar(event,this)"><i></i></div><small class="tdur">--:--</small></div></div></div>`
   :`<div class="mempty">Nothing playing in ${nm} right now.<br>${ob}</div>`;
  return head+recentHtml()}
 
@@ -420,7 +421,10 @@ function renderPanel(){const top=$('#mtop');if(!top)return;const src=S.settings.
  if(!isLive(src)&&MLIB[src]==null)loadLib(src);
  if(isLive(src)&&(S.settings.recent||[]).length)['mp3','wav'].forEach(k=>{if(MLIB[k]==null)setTimeout(()=>loadLib(k),0)})}
 
-function renderFoot(){const f=$('#mfoot');if(!f)return;const n=nowInfo();
+function hasActive(){return useLocal()?!!curTrack():!!AM.title}
+function renderFoot(){const f=$('#mfoot');if(!f)return;
+ if(!hasActive()){if(_fh!==''){f.innerHTML='';f.style.display='none';_fh=''}return}
+ f.style.display='';const n=nowInfo();
  const h=`<div class="fr"><div class="art" style="${artStyle(n.art)}">${n.art?'':'🎵'}</div><div class="meta">${mq(n.title)}${mq(n.artist,'small')}</div>
  <div class="fctl"><button class="mctl" data-tip="Previous" onclick="musicPrev()">⏮</button><button class="mctl big" onclick="togglePlay()">${n.playing?'⏸':'▶'}</button><button class="mctl" data-tip="Next" onclick="musicNext()">⏭</button></div></div>
  <div class="ftl"><small class="tcur">0:00</small><div class="mbar pbar" onclick="seekBar(event,this)"><i></i></div><small class="tdur">--:--</small></div>`;

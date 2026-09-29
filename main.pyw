@@ -1,4 +1,4 @@
-import asyncio, base64, ctypes, glob, json, os, subprocess, sys, threading, time
+import asyncio, base64, ctypes, glob, json, os, socket, subprocess, sys, threading, time
 from datetime import datetime, timezone
 import webview
 
@@ -521,9 +521,56 @@ def _on_closing():
     return True
 
 
+# ---------------- Single instance: shortcut-launch wakes the running copy instead of spawning a duplicate ----------------
+_SINGLE_PORT = 51987
+_single_sock = None
+
+
+def _acquire_single_instance():
+    """True if we're the first ELE-TRON process; claims a loopback port as the lock."""
+    global _single_sock
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
+    try:
+        s.bind(("127.0.0.1", _SINGLE_PORT))
+    except OSError:
+        s.close()
+        return False
+    s.listen(4)
+    _single_sock = s
+    return True
+
+
+def _wake_existing_instance():
+    try:
+        with socket.create_connection(("127.0.0.1", _SINGLE_PORT), timeout=1.5):
+            pass
+        return True
+    except OSError:
+        return False
+
+
+def _start_single_instance_listener(win):
+    def _serve():
+        while True:
+            try:
+                conn, _addr = _single_sock.accept()
+                conn.close()
+                _show_window(win)
+            except Exception:
+                pass
+    threading.Thread(target=_serve, daemon=True).start()
+
+
 if __name__ == "__main__":
+    if not _acquire_single_instance():
+        # Another ELE-TRON is already running (visible or in the tray) - wake
+        # it and quit instead of opening a second window/tray icon.
+        _wake_existing_instance()
+        sys.exit(0)
     window = webview.create_window("ELE-TRON", os.path.join(BASE, "ui", "index.html"), js_api=Api(),
                                     width=1080, height=720, min_size=(860, 580), background_color="#090b14")
+    _start_single_instance_listener(window)
     try:
         window.events.closing += _on_closing
     except Exception:
