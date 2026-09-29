@@ -17,7 +17,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-pyinstaller --noconsole --noconfirm --name ELE-TRON --icon icon.ico --add-data "ui;ui" ^
+pyinstaller --noconsole --noconfirm --name ELE-TRON --icon icon.ico --add-data "ui;ui" --add-data "icon.ico;." ^
   --collect-all mutagen --collect-all pystray --collect-all PIL ^
   --collect-all winrt.runtime ^
   --collect-all winrt.windows.foundation --collect-all winrt.windows.foundation.collections ^

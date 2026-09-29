@@ -1,4 +1,5 @@
 import asyncio, base64, ctypes, glob, json, os, subprocess, sys, threading, time
+from datetime import datetime, timezone
 import webview
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -30,7 +31,7 @@ except Exception:
 
 try:
     import pystray
-    from PIL import Image as PILImage
+    from PIL import Image as PILImage, ImageDraw
     HAS_TRAY = True
 except Exception:
     HAS_TRAY = False
@@ -174,6 +175,29 @@ def _smtc_session(source="applemusic"):
                 return s
         return None
     return _run_async(_get())
+
+
+_TRK = {"key": None, "t0": 0.0}
+
+
+def _live_pos(tl, title, pos, dur, playing):
+    """SMTC only refreshes `position` on play/pause/seek, so extrapolate it to 'now'."""
+    if not playing:
+        return pos
+    try:
+        lu = tl.last_updated_time
+        if lu.tzinfo is None:
+            lu = lu.replace(tzinfo=timezone.utc)
+        d = (datetime.now(timezone.utc) - lu).total_seconds()
+        if 0 <= d <= (dur if dur > 0 else 3600):
+            return pos + d
+    except Exception:
+        pass
+    # Fallback: count time ourselves from the first moment we saw this position.
+    key = (title, round(pos, 1))
+    if _TRK["key"] != key:
+        _TRK["key"], _TRK["t0"] = key, time.time()
+    return pos + (time.time() - _TRK["t0"])
 
 
 async def _read_thumb(stream_ref):
@@ -355,26 +379,39 @@ class Api:
     def music_now_playing(self, a=None):
         if not HAS_SMTC:
             return None
+        a = a or {}
         try:
-            s = _smtc_session((a or {}).get("source") or "applemusic")
+            s = _smtc_session(a.get("source") or "applemusic")
             if not s:
                 return None
+            known = a.get("artkey") or ""
 
             async def _info():
                 props = await s.try_get_media_properties_async()
                 pb = s.get_playback_info()
                 tl = s.get_timeline_properties()
-                art = await _read_thumb(props.thumbnail) if props and props.thumbnail else None
-                pos = tl.position.total_seconds() if tl and tl.position else 0
-                end = tl.end_time.total_seconds() if tl and tl.end_time else 0
-                return {
-                    "title": (props.title if props else "") or "",
-                    "artist": (props.artist if props else "") or "",
-                    "album": (props.album_title if props else "") or "",
-                    "art": art,
-                    "playing": pb.playback_status == PBStatus.PLAYING if pb else False,
-                    "position": max(0, pos), "duration": max(0, end),
-                }
+                title = (props.title if props else "") or ""
+                artist = (props.artist if props else "") or ""
+                album = (props.album_title if props else "") or ""
+                key = f"{title}|{artist}|{album}"
+                art, artkey = None, ""
+                if props and props.thumbnail:
+                    if known and known == key:
+                        artkey = key  # front-end already has this artwork
+                    else:
+                        art = await _read_thumb(props.thumbnail)
+                        artkey = key if art else ""
+                playing = pb.playback_status == PBStatus.PLAYING if pb else False
+                st = tl.start_time.total_seconds() if tl and tl.start_time else 0
+                en = tl.end_time.total_seconds() if tl and tl.end_time else 0
+                dur = max(0, en - st)
+                pos = max(0, (tl.position.total_seconds() if tl and tl.position else 0) - st)
+                if tl:
+                    pos = _live_pos(tl, title, pos, dur, playing)
+                if dur:
+                    pos = min(pos, dur)
+                return {"title": title, "artist": artist, "album": album, "art": art, "artkey": artkey,
+                        "playing": playing, "position": pos, "duration": dur}
             return _run_async(_info())
         except Exception:
             return None
@@ -391,10 +428,14 @@ class Api:
             async def _do():
                 if action == "playpause":
                     await s.try_toggle_play_pause_async()
+                elif action == "pause":
+                    await s.try_pause_async()
                 elif action == "next":
                     await s.try_skip_next_async()
                 elif action == "prev":
                     await s.try_skip_previous_async()
+                elif action == "seek":
+                    await s.try_change_playback_position_async(int(float(a.get("pos") or 0) * 10_000_000))
             _run_async(_do())
             return True
         except Exception:
@@ -402,34 +443,62 @@ class Api:
 
 
 # ---------------- System tray ----------------
-TRAY = {"icon": None, "minimize": True}
+TRAY = {"icon": None, "minimize": True, "ready": False}
+
+
+def _tray_image():
+    for base in (BASE, HERE):
+        try:
+            return PILImage.open(os.path.join(base, "icon.ico")).convert("RGBA")
+        except Exception:
+            continue
+    img = PILImage.new("RGBA", (64, 64), (0, 0, 0, 0))  # fallback so the tray never fails on a missing icon
+    d = ImageDraw.Draw(img)
+    d.ellipse((4, 4, 60, 60), fill=(124, 140, 255, 255))
+    d.ellipse((20, 20, 44, 44), fill=(9, 11, 20, 255))
+    return img
+
+
+def _show_window(window):
+    window.show()
+    try:
+        window.restore()
+    except Exception:
+        pass
+    try:
+        window.evaluate_js("window.onAppShown&&window.onAppShown()")
+    except Exception:
+        pass
 
 
 def _tray_start(window):
     if not HAS_TRAY:
         return
     try:
-        img = PILImage.open(os.path.join(BASE, "icon.ico"))
-
         def _show(icon, item):
-            window.show()
+            _show_window(window)
 
         def _quit(icon, item):
             icon.stop()
             os._exit(0)
 
+        def _setup(icon):
+            icon.visible = True
+            TRAY["ready"] = True
+
         menu = pystray.Menu(
             pystray.MenuItem("Show ELE-TRON", _show, default=True),
             pystray.MenuItem("Quit", _quit),
         )
-        TRAY["icon"] = pystray.Icon("ELE-TRON", img, "ELE-TRON", menu)
-        threading.Thread(target=TRAY["icon"].run, daemon=True).start()
+        TRAY["icon"] = pystray.Icon("ELE-TRON", _tray_image(), "ELE-TRON", menu)
+        TRAY["icon"].run_detached(_setup)
     except Exception:
-        TRAY["icon"] = None
+        TRAY["icon"], TRAY["ready"] = None, False
 
 
 def _on_closing():
-    if TRAY["icon"] is not None and TRAY["minimize"]:
+    # Only hide when the tray icon is really up, otherwise the window could never be brought back.
+    if TRAY["ready"] and TRAY["minimize"]:
         window.hide()
         return False
     return True
