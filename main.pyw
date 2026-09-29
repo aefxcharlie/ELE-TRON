@@ -446,7 +446,11 @@ class Api:
                 if action == "playpause":
                     await s.try_toggle_play_pause_async()
                 elif action == "pause":
-                    await s.try_pause_async()
+                    ok = await s.try_pause_async()
+                    if not ok:
+                        pb = s.get_playback_info()
+                        if pb and pb.playback_status == PBStatus.PLAYING:
+                            await s.try_toggle_play_pause_async()
                 elif action == "next":
                     await s.try_skip_next_async()
                 elif action == "prev":
