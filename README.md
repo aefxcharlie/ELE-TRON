@@ -16,16 +16,48 @@ Hi, I'm **Chaitany**, also known as **aefxcharlie** on the internet. I built ELE
 
 - **Auto-start at login.** Launches when you sign in to Windows, shows a short countdown, then opens your default workspace. Cancel or switch workspace during the countdown.
 - **Workspaces.** Group anything you want into one-click setups (Work, Study, Gaming, and so on).
-- **Auto-detected apps.** Chrome, Discord, Steam, WhatsApp and Telegram show up as one-click options, but only if they are installed on your PC.
+- **Auto-detected apps.** Chrome, Discord, Steam, WhatsApp, Telegram, Apple Music and Spotify (including the Microsoft Store versions) show up as one-click options, but only if they are installed on your PC.
+- **Live greeting.** The home page greets you by time of day and updates in real time: *This early* (12am-5:59am), *Good morning* (6am-11:59am), *Good afternoon* (12pm-5:59pm), *Good evening* (6pm-8:59pm), *This late* (9pm-11:59pm).
 - **Chrome profiles.** Pick which of your Chrome accounts to open and which website to load, for example a mail site in your work profile.
 - **Custom apps.** Add any app, file, folder or URL by path, with Browse buttons.
 - **Notes.** Colour-coded cards with search, pinning, checklists and word count.
 - **Quick Links and Apps.** Pin favourite sites and programs on your dashboard.
 - **Custom background.** Use your own image, choose how it fits (fill, fit, stretch, original size) and tune background blur, dimming, glass blur and glass tint.
-- **Music widget.** A compact glass pill in the bottom-right corner shows what's playing and expands into a full panel with a left sidebar for MP3, WAV and Apple Music, list/icon library views, and hover tooltips on the icon-only controls. Optional and fully local; Apple Music sync needs one extra package (see Music below).
+- **Music widget.** A compact glass pill in the bottom-right corner shows what's playing and expands into a full panel with a left sidebar for MP3, WAV and Apple Music, list/icon library views, and hover tooltips on the icon-only controls. Fully local. Apple Music and Spotify (Microsoft Store or desktop app) are auto-detected and show up live in the widget if installed.
 - **System tray.** Runs from the tray; closing the window minimizes it instead of quitting (toggle in Settings).
 - **Light on resources.** Roughly 50-80 MB of RAM. It exits itself after an automatic startup launch, so it uses nothing while you work.
 - **100% local.** All data stays on your PC.
+
+---
+
+## v1.0.0 vs v1.1.0
+
+Comparison between [v1.0.0](https://github.com/aefxcharlie/ELE-TRON/releases/tag/v1.0.0) (initial public release) and v1.1.0 (this version).
+
+| | v1.0.0 | v1.1.0 |
+|---|---|---|
+| Python | 3.10 to 3.13 | **3.13 or newer only** |
+| Python packages | `pywebview` only | `pywebview`, `mutagen`, `pystray`, `pillow`, `winrt-*` (all required, `pip install -r requirements.txt`) |
+| Music widget | None | Glass pill in the bottom-right that expands into a full panel (MP3, WAV, Apple Music, Spotify) with list/icon views and hover tooltips |
+| MP3 / WAV library | None | Local folder scan with title, artist, album and artwork |
+| Apple Music | Not supported | Auto-detected (Store app), live now-playing card and controls |
+| Spotify | Not supported | Auto-detected (Store or desktop app), live now-playing card and controls |
+| Windows media API | None | `winrt-*` packages (replaces `winsdk`, which does not support Python 3.13) |
+| System tray | None | Tray icon with **Minimize to tray** toggle |
+| Auto-detected apps | Chrome, Discord, Steam, WhatsApp, Telegram | Same, plus Apple Music and Spotify (Store versions included) |
+| Home greeting | Good morning / afternoon / evening, refreshed every 15 seconds | Five time-based greetings, updated in real time (every second) |
+| `requirements.txt` | `pywebview` | Full dependency list |
+| `build_exe.bat` | Installs `pyinstaller` and `pywebview`, then builds | Checks for Python 3.13+, installs all requirements (stops on failure), bundles every package |
+
+Greetings in v1.1.0:
+
+| Time | Greeting |
+|---|---|
+| 12:00 am to 5:59 am | This early, *name*? |
+| 6:00 am to 11:59 am | Good morning, *name* |
+| 12:00 pm to 5:59 pm | Good afternoon, *name* |
+| 6:00 pm to 8:59 pm | Good evening, *name* |
+| 9:00 pm to 11:59 pm | This late, *name*? |
 
 ---
 
@@ -34,10 +66,10 @@ Hi, I'm **Chaitany**, also known as **aefxcharlie** on the internet. I built ELE
 | Requirement | Details |
 |---|---|
 | OS | Windows 10 or Windows 11 |
-| Python | **3.10 to 3.13**. Avoid brand-new releases such as 3.14 until `pythonnet` supports them. Not needed if you only use the built `.exe`. |
+| Python | **3.13 or newer only.** Older versions (3.12 and below) are not supported. Not needed if you only use the built `.exe`. |
 | WebView2 Runtime | Preinstalled on Windows 11 and up-to-date Windows 10. If the window stays blank, install it from Microsoft. |
-| Python packages | `pywebview` (installed for you). Optional: `mutagen`, `pystray`, `winsdk` (see Music below). |
-| Internet | Only needed once to download the packages. About 15-20 MB for `pywebview`, plus about 3 MB for `pyinstaller` if you build the `.exe`. |
+| Python packages | All required, installed with `pip install -r requirements.txt`: `pywebview`, `mutagen`, `pystray`, `pillow`, and the `winrt-*` packages (`winrt-runtime`, `winrt-Windows.Foundation`, `winrt-Windows.Foundation.Collections`, `winrt-Windows.Storage`, `winrt-Windows.Storage.Streams`, `winrt-Windows.Media.Control`). |
+| Internet | Only needed once to download the packages. Roughly 30-40 MB of packages, plus about 3 MB for `pyinstaller` if you build the `.exe`. |
 
 When installing Python, tick **"Add python.exe to PATH"** in the installer.
 
@@ -48,7 +80,7 @@ When installing Python, tick **"Add python.exe to PATH"** in the installer.
 ```
 git clone https://github.com/aefxcharlie/ELE-TRON.git
 cd ELE-TRON
-pip install pywebview
+pip install -r requirements.txt
 python main.pyw
 ```
 
@@ -62,10 +94,11 @@ After the first run you can simply double-click `main.pyw`.
 
 Double-click **`build_exe.bat`**. It runs, in order:
 
-1. `pip install pyinstaller pywebview` installs the build tool and the UI library.
-2. Tries to install the optional music extras (`mutagen`, `pystray`, `winsdk`); if any fail, the build continues without them.
-3. Runs PyInstaller, bundling whichever optional extras are present, without a console window, with the `ui` folder and the icon included.
-4. Prints the location of the finished app.
+1. Checks that Python is 3.13 or newer.
+2. `pip install pyinstaller` installs the build tool.
+3. `pip install -r requirements.txt` installs every dependency. The build stops if this fails.
+4. Runs PyInstaller, bundling all packages, without a console window, with the `ui` folder and the icon included.
+5. Prints the location of the finished app.
 
 Result:
 
@@ -101,16 +134,15 @@ If you move the app folder, turn **Start with Windows** off and on again so the 
 
 ## Music
 
-The music widget sits bottom-right and works with no setup: pick a **MP3 folder** and/or **WAV folder** the first time you open a source (or from Settings), and ELE-TRON scans it for playable files. Playback, browsing (List or Icon view) and artwork all stay fully local and work with just `pywebview` installed.
+The music widget sits bottom-right: pick a **MP3 folder** and/or **WAV folder** the first time you open a source (or from Settings), and ELE-TRON scans it for playable files. Playback, browsing (List or Icon view) and artwork all stay fully local.
 
-Two things are optional, and the app runs fine without them:
+Required packages (all included in `requirements.txt`):
 
-- **`mutagen`** reads track title/artist/album and embedded artwork. Without it, tracks are shown by filename with a placeholder icon.
-- **`winsdk`** gives Apple Music its live now-playing card (track, art, play/pause/next/previous, progress) via Windows' System Media Transport Controls, the same public interface Windows uses for its own media overlay. Without it, the Apple Music tab just offers a button to open the app.
+- **`mutagen`** reads track title/artist/album and embedded artwork.
+- **`winrt-*`** packages give **Apple Music** and **Spotify** their live now-playing card (track, art, play/pause/next/previous, progress) via Windows' System Media Transport Controls, the same public interface Windows uses for its own media overlay. These replace the older `winsdk` package, which does not support Python 3.13.
+- **`pystray`** and **`pillow`** provide the tray icon behind **Minimize to tray**.
 
-`pystray` (also optional) adds the tray icon behind **Minimize to tray**.
-
-Apple Music itself only appears as a source, and as a Workspace app, if the Apple Music Windows app is installed. ELE-TRON never bypasses its login, subscription or DRM.
+Apple Music and Spotify only appear as a source, and as Workspace apps, if they are installed on your PC (Microsoft Store or desktop version). Both are detected automatically, so they cannot and need not be added as custom apps. ELE-TRON never bypasses their login, subscription or DRM.
 
 ---
 
@@ -140,7 +172,8 @@ It is never stored in the app folder, so sharing the app never shares your data.
 | `python` is not recognized | Reinstall Python with **Add to PATH** ticked, then open a new terminal. |
 | `pip` or `python` blocked in PowerShell | Run `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`, or use Command Prompt. |
 | Blank window | Install the Microsoft **WebView2 Runtime**. |
-| `pywebview` fails to install | Use Python 3.10-3.13. |
+| `pywebview` or a `winrt-*` package fails to install | Use Python 3.13 or newer (64-bit) and run `python -m pip install --upgrade pip` first. |
+| Apple Music or Spotify not showing | Make sure the app is installed and has been opened once, then restart ELE-TRON. |
 | An app says "Not found" | It is not installed in a standard location. Add it as a **custom app** using its path. |
 | Startup did not run | Turn **Start with Windows** off and on, and approve the admin prompt. |
 
@@ -154,7 +187,7 @@ ELE-TRON/
 ├── ui/index.html     Frontend (HTML, CSS, JS in a single file)
 ├── build_exe.bat     One-click .exe builder
 ├── icon.ico          App icon
-└── requirements.txt  Python dependencies
+└── requirements.txt  Python dependencies (all required)
 ```
 
 Built with Python, [pywebview](https://pywebview.flowrl.com/) and plain HTML/CSS/JS.
