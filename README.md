@@ -22,6 +22,8 @@ Hi, I'm **Chaitany**, also known as **aefxcharlie** on the internet. I built ELE
 - **Notes.** Colour-coded cards with search, pinning, checklists and word count.
 - **Quick Links and Apps.** Pin favourite sites and programs on your dashboard.
 - **Custom background.** Use your own image, choose how it fits (fill, fit, stretch, original size) and tune background blur, dimming, glass blur and glass tint.
+- **Music widget.** A compact glass pill in the bottom-right corner shows what's playing and expands into a full panel with a left sidebar for MP3, WAV and Apple Music, list/icon library views, and hover tooltips on the icon-only controls. Optional and fully local; Apple Music sync needs one extra package (see Music below).
+- **System tray.** Runs from the tray; closing the window minimizes it instead of quitting (toggle in Settings).
 - **Light on resources.** Roughly 50-80 MB of RAM. It exits itself after an automatic startup launch, so it uses nothing while you work.
 - **100% local.** All data stays on your PC.
 
@@ -34,7 +36,7 @@ Hi, I'm **Chaitany**, also known as **aefxcharlie** on the internet. I built ELE
 | OS | Windows 10 or Windows 11 |
 | Python | **3.10 to 3.13**. Avoid brand-new releases such as 3.14 until `pythonnet` supports them. Not needed if you only use the built `.exe`. |
 | WebView2 Runtime | Preinstalled on Windows 11 and up-to-date Windows 10. If the window stays blank, install it from Microsoft. |
-| Python packages | `pywebview` (installed for you, see below) |
+| Python packages | `pywebview` (installed for you). Optional: `mutagen`, `pystray`, `winsdk` (see Music below). |
 | Internet | Only needed once to download the packages. About 15-20 MB for `pywebview`, plus about 3 MB for `pyinstaller` if you build the `.exe`. |
 
 When installing Python, tick **"Add python.exe to PATH"** in the installer.
@@ -61,8 +63,9 @@ After the first run you can simply double-click `main.pyw`.
 Double-click **`build_exe.bat`**. It runs, in order:
 
 1. `pip install pyinstaller pywebview` installs the build tool and the UI library.
-2. `pyinstaller --noconsole --noconfirm --name ELE-TRON --icon icon.ico --add-data "ui;ui" main.pyw` packages the app without a console window, includes the `ui` folder and sets the icon.
-3. Prints the location of the finished app.
+2. Tries to install the optional music extras (`mutagen`, `pystray`, `winsdk`); if any fail, the build continues without them.
+3. Runs PyInstaller, bundling whichever optional extras are present, without a console window, with the `ui` folder and the icon included.
+4. Prints the location of the finished app.
 
 Result:
 
@@ -96,6 +99,21 @@ If you move the app folder, turn **Start with Windows** off and on again so the 
 
 ---
 
+## Music
+
+The music widget sits bottom-right and works with no setup: pick a **MP3 folder** and/or **WAV folder** the first time you open a source (or from Settings), and ELE-TRON scans it for playable files. Playback, browsing (List or Icon view) and artwork all stay fully local and work with just `pywebview` installed.
+
+Two things are optional, and the app runs fine without them:
+
+- **`mutagen`** reads track title/artist/album and embedded artwork. Without it, tracks are shown by filename with a placeholder icon.
+- **`winsdk`** gives Apple Music its live now-playing card (track, art, play/pause/next/previous, progress) via Windows' System Media Transport Controls, the same public interface Windows uses for its own media overlay. Without it, the Apple Music tab just offers a button to open the app.
+
+`pystray` (also optional) adds the tray icon behind **Minimize to tray**.
+
+Apple Music itself only appears as a source, and as a Workspace app, if the Apple Music Windows app is installed. ELE-TRON never bypasses its login, subscription or DRM.
+
+---
+
 ## Where your data lives
 
 Everything is stored in `%APPDATA%\ELE-TRON\`:
@@ -103,7 +121,7 @@ Everything is stored in `%APPDATA%\ELE-TRON\`:
 - `data.json` holds workspaces, notes, links, apps and settings.
 - `bg.txt` holds your background image.
 
-It is never stored in the app folder, so sharing the app never shares your data. To reset the app, close it and delete that folder.
+It is never stored in the app folder, so sharing the app never shares your data. Your MP3/WAV folder locations are stored here too, not the audio files themselves. To reset the app, close it and delete that folder.
 
 ---
 
