@@ -266,7 +266,7 @@ const MNAV=[['mp3','MP3','🎵'],['wav','WAV','🎶'],['applemusic','Apple Music
 const isLive=k=>k==='applemusic'||k==='spotify';
 let MLIB={mp3:null,wav:null},MEXTRA={mutagen:false,smtc:false,tray:false};
 const AM0=()=>({title:'',artist:'',album:'',art:null,artkey:'',playing:false,position:0,duration:0,_t:performance.now()});
-let AM=AM0(),mplaying=false,mqueue=[],mIdx=-1,mqKind='',amTimer=null,amBusy=false,mopen=false,lastRec='',mnow=false;
+let AM=AM0(),mplaying=false,mqueue=[],mIdx=-1,mqKind='',amTimer=null,amBusy=false,mopen=false,lastRec='',mnow=false,mSuppressBg=0;
 let _ch='',_th='',_bh='',_fh='',artObs=null;
 const player=new Audio();
 let mLoading=false,mSkipStreak=0;
@@ -326,6 +326,7 @@ function selectSource(src){S.settings.musicSource=src;save();AM=AM0();_bh='';mno
 function setView(v){S.settings.musicView=v;save();renderPanel()}
 async function playAt(kind,i){const lib=MLIB[kind];if(!Array.isArray(lib)||!lib[i])return;mqueue=lib;mqKind=kind;mIdx=i;const t=lib[i];
  mnow=true;mLoading=true;player.pause();refreshUI();
+ mSuppressBg=Date.now()+8000;/* grace period: AM/Spotify pause command + SMTC status lag; while this is active, poll-driven auto-pause of the local track we're starting is disabled */
  inv('music_control',{action:'pause',source:'applemusic'});inv('music_control',{action:'pause',source:'spotify'});/* only one thing should play at a time */
  const src=await inv('music_stream',{path:t.path});
  if(mqKind!==kind||mIdx!==i)return;/* user already moved on while this was loading */
@@ -339,7 +340,8 @@ function musicPrev(){if(useLocal()){const lib=MLIB[mqKind];if(mIdx<0||!Array.isA
   playAt(mqKind,lib.length<=1?0:(mIdx-1+lib.length)%lib.length)}else amCtl('prev')}
 function backToList(){mnow=false;renderPanel()}
 function togglePlay(){if(useLocal()){if(!curTrack())return;player.paused?player.play()?.catch?.(()=>{}):player.pause()}else amCtl('playpause')}
-function seekBar(e,el){const n=nowInfo();if(!n.dur)return;const r=el.getBoundingClientRect(),p=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))*n.dur;
+function seekBar(e,el){const n=nowInfo();if(!n.dur){if(n.live)toast('Seek not available: this app is not reporting a track length.');return}
+ const r=el.getBoundingClientRect(),p=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))*n.dur;
  if(n.live){AM.position=p;AM._t=performance.now();inv('music_control',{action:'seek',source:S.settings.musicSource,pos:p});tick()}else player.currentTime=p}
 
 /* ---- live sources (Apple Music / Spotify) ---- */
@@ -349,10 +351,10 @@ async function amTick(){if(amBusy||document.hidden)return;const src=S.settings.m
  try{const d=await inv('music_now_playing',{source:src,artkey:AM.artkey||''});if(S.settings.musicSource!==src)return;
   const na=AM0();if(d){Object.assign(na,d);if(d.artkey&&d.artkey===AM.artkey&&!d.art)na.art=AM.art}
   const ch=na.title!==AM.title||na.artist!==AM.artist||na.art!==AM.art||na.playing!==AM.playing;
-  if(na.playing&&mplaying){player.pause();mplaying=false}/* AM/Spotify started playing (detected via poll) -> stop local so only one plays */
+  if(na.playing&&mplaying&&Date.now()>mSuppressBg){player.pause();mplaying=false}/* AM/Spotify started playing (detected via poll) -> stop local so only one plays */
   AM=na;if(d&&d.title)recordRecent(d);if(ch)refreshUI();tick()}
  catch(e){}finally{amBusy=false}}
-async function bgTick(){if(document.hidden)return;for(const k of['applemusic','spotify']){if(k===S.settings.musicSource)continue;
+async function bgTick(){if(document.hidden||Date.now()<=mSuppressBg)return;for(const k of['applemusic','spotify']){if(k===S.settings.musicSource)continue;
   try{const d=await inv('music_now_playing',{source:k,artkey:''});if(d&&d.playing&&mplaying){player.pause();mplaying=false;refreshUI();break}}catch(e){}}}
 async function startAMPoll(){stopAMPoll();await amTick();amTimer=setInterval(amTick,2000)}
 function stopAMPoll(){clearInterval(amTimer);amTimer=null}

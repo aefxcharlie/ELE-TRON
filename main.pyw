@@ -454,9 +454,13 @@ class Api:
                     pb = s.get_playback_info()
                     if pb and pb.playback_status == PBStatus.PLAYING:
                         await s.try_pause_async()
-                        pb2 = s.get_playback_info()
-                        if pb2 and pb2.playback_status == PBStatus.PLAYING:
-                            # try_pause_async silently no-oped on this app -> use toggle instead
+                        for _ in range(4):  # check a few times over ~1s, some apps are slow to reflect status
+                            await asyncio.sleep(0.25)
+                            pb2 = s.get_playback_info()
+                            if not pb2 or pb2.playback_status != PBStatus.PLAYING:
+                                break
+                        else:
+                            # still playing after ~1s -> try_pause_async silently no-oped, use toggle
                             await s.try_toggle_play_pause_async()
                 elif action == "next":
                     await s.try_skip_next_async()
