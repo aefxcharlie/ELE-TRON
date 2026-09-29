@@ -376,6 +376,23 @@ class Api:
             pass
         return None
 
+    def music_stream(self, a):
+        """Read a local audio file and hand it back as a data: URI.
+        file:// playback is unreliable/blocked inside WebView2 for paths
+        outside the app folder, so we stream bytes through the JS bridge
+        instead (same trick music_artwork already uses for cover art)."""
+        path = a.get("path") or ""
+        try:
+            if not os.path.isfile(path):
+                return None
+            with open(path, "rb") as f:
+                data = f.read()
+            ext = os.path.splitext(path)[1].lower()
+            mime = "audio/mpeg" if ext == ".mp3" else "audio/wav"
+            return f"data:{mime};base64,{base64.b64encode(data).decode()}"
+        except Exception:
+            return None
+
     def music_now_playing(self, a=None):
         if not HAS_SMTC:
             return None

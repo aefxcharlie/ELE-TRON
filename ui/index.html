@@ -141,7 +141,11 @@ input[type=range]{accent-color:#7c8cff;width:100%}
 #mp .ftl{display:flex;align-items:center;gap:8px}
 #mp .ftl small{font-variant-numeric:tabular-nums;min-width:34px;text-align:center}
 #mp .cbar{position:absolute;left:12px;right:12px;bottom:5px;height:2px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
-/* widget adapts to the window size so it never covers the content */
+/* ---- resize: kill blur/transition mid-drag so the panel repaints instantly, no smear/ghost trail ---- */
+body.resizing #mp,body.resizing .glass{transition:none!important}
+body.resizing #mp{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(14,16,26,.94)!important}
+body.resizing .glass{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(14,16,26,.9)!important}
+
 @media(max-width:1000px){#mp:not(.open){width:176px}#mp:not(.open) .exp{display:none}}
 @media(max-width:820px){#mp:not(.open){width:120px}#mp:not(.open) .meta{display:none}}
 @media(max-width:620px),(max-height:520px){#mp:not(.open){width:54px;height:54px;border-radius:50%}#mp:not(.open) .mctl,#mp:not(.open) .cbar,#mp:not(.open) .exp{display:none}#mp:not(.open) .mcompact{justify-content:center;padding:0}}
@@ -265,8 +269,12 @@ const AM0=()=>({title:'',artist:'',album:'',art:null,artkey:'',playing:false,pos
 let AM=AM0(),mplaying=false,mqueue=[],mIdx=-1,mqKind='',amTimer=null,amBusy=false,mopen=false,lastRec='',mnow=false;
 let _ch='',_th='',_bh='',_fh='',artObs=null;
 const player=new Audio();
+let mLoading=false,mSkipStreak=0;
 player.addEventListener('ended',()=>musicNext());
-player.addEventListener('error',()=>{if(curTrack())toast('Could not play "'+(curTrack().title||'this track')+'"');musicNext()});
+player.addEventListener('canplay',()=>{mSkipStreak=0});
+player.addEventListener('error',()=>{if(mLoading)return;/* real mid-playback error, not a load we already handled */
+ mSkipStreak++;if(mSkipStreak>=Math.max(1,(MLIB[mqKind]||[]).length)){toast('None of the files in this folder could be played.');player.pause();mSkipStreak=0;refreshUI();return}
+ if(curTrack())toast('Could not play "'+(curTrack().title||'this track')+'"');musicNext()});
 player.addEventListener('play',()=>{mplaying=true;refreshUI()});
 player.addEventListener('pause',()=>{mplaying=false;refreshUI()});
 const refreshUI=()=>{renderWidget();renderFoot();if(mopen)renderPanel()};
@@ -312,12 +320,19 @@ function observeArt(){if(!('IntersectionObserver' in window))return;const b=$('#
  artObs.disconnect();b.querySelectorAll('[data-id]').forEach(el=>artObs.observe(el))}
 
 /* ---- transport ---- */
-function selectSource(src){S.settings.musicSource=src;save();AM=AM0();_bh='';mnow=false;const b=$('#mbody');if(b)b.scrollTop=0;
+function selectSource(src){if(isLive(src)&&mplaying){player.pause();mplaying=false}/* stop local audio so its state can't leak into a live tab; pause() fires its event async, so flip the flag now too */
+ S.settings.musicSource=src;save();AM=AM0();_bh='';mnow=false;const b=$('#mbody');if(b)b.scrollTop=0;
  if(isLive(src))startAMPoll();else{stopAMPoll();if(MLIB[src]==null)loadLib(src)}
  renderSidebar();renderPanel();renderWidget();renderFoot()}
 function setView(v){S.settings.musicView=v;save();renderPanel()}
-function playAt(kind,i){const lib=MLIB[kind];if(!Array.isArray(lib)||!lib[i])return;mqueue=lib;mqKind=kind;mIdx=i;const t=lib[i];
- mnow=true;player.src=fileUrl(t.path);player.currentTime=0;player.play()?.catch?.(()=>{});ensureArt(t);refreshUI()}
+async function playAt(kind,i){const lib=MLIB[kind];if(!Array.isArray(lib)||!lib[i])return;mqueue=lib;mqKind=kind;mIdx=i;const t=lib[i];
+ mnow=true;mLoading=true;player.pause();refreshUI();
+ const src=await inv('music_stream',{path:t.path});
+ if(mqKind!==kind||mIdx!==i)return;/* user already moved on while this was loading */
+ mLoading=false;
+ if(!src){mSkipStreak++;if(mSkipStreak>=lib.length){toast('None of the files in this folder could be played.');mSkipStreak=0;refreshUI();return}
+  toast('Could not read "'+(t.title||'this track')+'"');musicNext();return}
+ mSkipStreak=0;player.src=src;player.currentTime=0;player.play()?.catch?.(()=>{});ensureArt(t);refreshUI()}
 function musicNext(){if(useLocal()){const lib=MLIB[mqKind];if(mIdx<0||!Array.isArray(lib)||!lib.length)return;
   playAt(mqKind,lib.length<=1?0:(mIdx+1)%lib.length)}else amCtl('next')}
 function musicPrev(){if(useLocal()){const lib=MLIB[mqKind];if(mIdx<0||!Array.isArray(lib)||!lib.length)return;
@@ -385,9 +400,9 @@ function libRows(kind){const lib=MLIB[kind];
 
 function nowPlayingHtml(){const t=curTrack();if(!t)return '<div class="mempty">Nothing playing.</div>';const n=nowInfo();
  return `<div class="npwrap"><div class="npart" style="${artStyle(n.art)}">${n.art?'':'🎵'}</div>
- <div class="npmeta">${mq(n.title,'b')}${mq(n.artist||'Unknown artist','small')}</div>
+ <div class="npmeta">${mq(n.title,'b')}${mq(mLoading?'Loading…':(n.artist||'Unknown artist'),'small')}</div>
  <div class="ftl" style="padding:0 10px;width:100%"><small class="tcur">0:00</small><div class="mbar pbar" onclick="seekBar(event,this)"><i></i></div><small class="tdur">--:--</small></div>
- <div class="fctl" style="justify-content:center;gap:18px;margin-top:4px"><button class="mctl" data-tip="Previous" onclick="musicPrev()">⏮</button><button class="mctl big" onclick="togglePlay()">${n.playing?'⏸':'▶'}</button><button class="mctl" data-tip="Next" onclick="musicNext()">⏭</button></div></div>`}
+ <div class="fctl" style="justify-content:center;gap:18px;margin-top:4px"><button class="mctl" data-tip="Previous" onclick="musicPrev()">⏮</button><button class="mctl big" onclick="togglePlay()">${mLoading?'⏳':(n.playing?'⏸':'▶')}</button><button class="mctl" data-tip="Next" onclick="musicNext()">⏭</button></div></div>`}
 function amHtml(){const src=S.settings.musicSource,m=MNAV.find(n=>n[0]===src),nm=m[1],ic=m[2];
  const ob=`<button class="btn" style="margin-top:10px" onclick="inv('launch',{items:[{kind:'app',app:'${src}'}]})">Open ${nm}</button>`;
  if(!MEXTRA.smtc)return `<div class="mempty">Live ${nm} sync needs the Windows media package.<br><small>pip install -r requirements.txt</small><br>${ob}</div>`;
@@ -416,6 +431,7 @@ function toggleMusicPanel(){mopen=!mopen;$('#mp').classList.toggle('open',mopen)
 function initMusicUI(){
  setInterval(tick,250);
  const mp=$('#mp');let rt;if('ResizeObserver' in window)new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>initMarquee(mp),120)}).observe(mp);
+ let winRt;window.addEventListener('resize',()=>{document.body.classList.add('resizing');clearTimeout(winRt);winRt=setTimeout(()=>document.body.classList.remove('resizing'),180)});
  document.addEventListener('mouseover',e=>{const r=e.target.closest&&e.target.closest('.trow,.tcard');if(r)r.querySelectorAll('.mq.hov').forEach(mqMeasure)});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshMusic()});
  window.addEventListener('focus',refreshMusic);window.onAppShown=refreshMusic}
