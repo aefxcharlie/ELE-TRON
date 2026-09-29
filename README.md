@@ -35,7 +35,7 @@ Hi, I'm **Chaitany**, also known as **aefxcharlie** on the internet. I built ELE
 
 ## v1.0.0 vs v1.1.0
 
-Comparison between [v1.0.0](https://github.com/aefxcharlie/ELE-TRON/releases/tag/v1.0.0) (initial public release) and [v1.1.0](https://github.com/aefxcharlie/ELE-TRON/releases/tag/v1.0.0) (this version).
+Comparison between [v1.0.0](https://github.com/aefxcharlie/ELE-TRON/releases/tag/v1.0.0) (initial public release) and [v1.1.0](https://github.com/aefxcharlie/ELE-TRON/releases/tag/v1.1.0) (this version).
 
 | | v1.0.0 | v1.1.0 |
 |---|---|---|
