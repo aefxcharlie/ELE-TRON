@@ -11,7 +11,8 @@ NOWIN = 0x08000000
 LA, AD = os.environ.get("LOCALAPPDATA", ""), os.environ.get("APPDATA", "")
 PF = [os.environ.get(k, "") for k in ("PROGRAMFILES", "PROGRAMFILES(X86)")]
 NAMES = {"chrome": "Chrome", "discord": "Discord", "steam": "Steam", "whatsapp": "WhatsApp",
-         "telegram": "Telegram", "applemusic": "Apple Music"}
+         "telegram": "Telegram", "applemusic": "Apple Music", "spotify": "Spotify"}
+LIVE_SRC = {"applemusic": "apple", "spotify": "spotify"}
 
 try:
     from mutagen import File as MutaFile
@@ -20,9 +21,9 @@ except Exception:
     HAS_MUTAGEN = False
 
 try:
-    from winsdk.windows.media.control import GlobalSystemMediaTransportControlsSessionManager as MediaManager
-    from winsdk.windows.media.control import GlobalSystemMediaTransportControlsSessionPlaybackStatus as PBStatus
-    from winsdk.windows.storage.streams import DataReader
+    from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager as MediaManager
+    from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionPlaybackStatus as PBStatus
+    from winrt.windows.storage.streams import DataReader
     HAS_SMTC = True
 except Exception:
     HAS_SMTC = False
@@ -102,7 +103,12 @@ def app_cmd(name):
             return [p]
         return store_cmd("TelegramMessengerLLP.TelegramDesktop_*", "Telegram")
     if name == "applemusic":
-        return store_cmd("AppleInc.AppleMusicWin_*", "Apple Music")
+        return store_cmd("AppleInc.AppleMusic*", "Apple Music")
+    if name == "spotify":
+        p = first([os.path.join(AD, "Spotify", "Spotify.exe")])
+        if p:
+            return [p]
+        return store_cmd("SpotifyAB.SpotifyMusic_*", "Spotify")
     return None
 
 
@@ -153,18 +159,20 @@ def _run_async(coro):
             loop.close()
 
 
-def _smtc_session():
+def _smtc_session(source="applemusic"):
+    key = LIVE_SRC.get(source, "apple")
+
     async def _get():
         mgr = await MediaManager.request_async()
         sessions = list(mgr.get_sessions())
         for s in sessions:
             aid = (s.source_app_user_model_id or "").lower()
-            if "apple" in aid and "music" in aid:
+            if key in aid and (key != "apple" or "music" in aid):
                 return s
         for s in sessions:
-            if "apple" in (s.source_app_user_model_id or "").lower():
+            if key in (s.source_app_user_model_id or "").lower():
                 return s
-        return mgr.get_current_session()
+        return None
     return _run_async(_get())
 
 
@@ -348,7 +356,7 @@ class Api:
         if not HAS_SMTC:
             return None
         try:
-            s = _smtc_session()
+            s = _smtc_session((a or {}).get("source") or "applemusic")
             if not s:
                 return None
 
@@ -375,7 +383,7 @@ class Api:
         if not HAS_SMTC:
             return False
         try:
-            s = _smtc_session()
+            s = _smtc_session(a.get("source") or "applemusic")
             if not s:
                 return False
             action = a.get("action")

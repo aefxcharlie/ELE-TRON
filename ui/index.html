@@ -125,7 +125,7 @@ const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let S,BG='',DET={},profiles=[],view='home',edit=null,nopen=null,q='',st,tt,timer;
 const NAV=[['home','Home','🏠',''],['workspaces','Workspaces','🚀','#ff8a5c,#ff4f81'],['notes','Notes','📝','#ffd45c,#ffa63d'],['apps','Apps','🧩','#a78bfa,#f472b6'],['settings','Settings','⚙️','#94a3b8,#64748b']];
-const APPS={chrome:['Chrome','🌐'],discord:['Discord','💬'],steam:['Steam','🎮'],whatsapp:['WhatsApp','🟢'],telegram:['Telegram','✈️'],applemusic:['Apple Music','🎵']};
+const APPS={chrome:['Chrome','🌐'],discord:['Discord','💬'],steam:['Steam','🎮'],whatsapp:['WhatsApp','🟢'],telegram:['Telegram','✈️'],applemusic:['Apple Music','🎵'],spotify:['Spotify','🎧']};
 const NC=['#7c8cff','#ff7ab8','#ffd45c','#34d3c5','#ff8a5c','#a78bfa'];
 const seed=()=>({settings:{name:'Dark Defender',autoLaunch:true,delay:5,defaultWs:'w1',autostart:false,trayEnabled:true,musicSource:'mp3',musicView:'list',mp3Folder:'',wavFolder:''},theme:{bgBlur:0,dim:25,gBlur:28,gAlpha:7,fit:'cover',gap:14},workspaces:[{id:'w1',name:'Work',icon:'💼',items:[{kind:'chrome',target:'https://proton.me/mail',profile:'Default'}]}],notes:[],links:[],apps:[]});
 const save=()=>{clearTimeout(st);st=setTimeout(()=>inv('save_data',{data:S}),300)};
@@ -143,13 +143,13 @@ function pickBg(el){const f=el.files[0];if(!f)return;const img=new Image();img.o
 function clearBg(){BG='';inv('save_bg',{data:''});applyTheme();toast('Background removed')}
 async function setTray(el){S.settings.trayEnabled=el.checked;save();try{await inv('set_tray_pref',{on:el.checked})}catch(e){}}
 
-const greet=()=>{const h=new Date().getHours();return h<12?'Good morning':h<18?'Good afternoon':'Good evening'};
+const greet=()=>{const h=new Date().getHours(),n=S.settings.name;return h<6?'This early, '+n+'?':h<12?'Good morning, '+n:h<18?'Good afternoon, '+n:h<21?'Good evening, '+n:'This late, '+n+'?'};
 const stamp=()=>{const d=new Date();return d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})};
-setInterval(()=>{const a=$('#hd');if(a){a.textContent=stamp();$('#hg').textContent=greet()+', '+S.settings.name}},15000);
+setInterval(()=>{const a=$('#hd'),g=$('#hg');if(!a||!g||!S)return;const t=stamp(),m=greet();if(a.textContent!==t)a.textContent=t;if(g.textContent!==m)g.textContent=m},1000);
 const rng=(l,k,min,max,u)=>`<label>${l}<input type="range" min="${min}" max="${max}" value="${S.theme[k]}" oninput="th('${k}',+this.value)"></label>`;
 const V={
 home(){const d=new Date(),h=d.getHours();
- return `<div class="hero"><h1 id="hg">${greet()}, ${esc(S.settings.name)}</h1><p id="hd">${stamp()}</p></div><div class="grid">`+
+ return `<div class="hero"><h1 id="hg">${esc(greet())}</h1><p id="hd">${stamp()}</p></div><div class="grid">`+
  NAV.slice(1).map((n,i)=>`<div class="tile" style="--i:${i};--c:${n[3]}" onclick="go('${n[0]}')"><div class="ic">${n[2]}</div><b>${n[1]}</b><small>${n[0]=='settings'?'Startup and appearance':cnt(n[0])+' saved'}</small></div>`).join('')+'</div>'},
 workspaces(){return head('Workspaces','<button class="btn pri" onclick="addWs()">New workspace</button>')+'<div class="grid">'+
  S.workspaces.map((w,i)=>`<div class="card" style="--i:${i}"><div class="big">${esc(w.icon)}</div><b>${esc(w.name)}</b><small>${w.items.length} items${S.settings.defaultWs==w.id?' · default':''}</small><div class="row"><button class="btn pri" onclick="run('${w.id}')">Launch</button><button class="btn" onclick="editWs('${w.id}')">Edit</button></div></div>`).join('')+'</div>'},
@@ -222,7 +222,8 @@ function stop(){clearInterval(timer);$('#ov').classList.remove('on')}
 function fire(){const id=$('#cw').value;stop();run(id,true)}
 
 /* ================= Music system ================= */
-const MNAV=[['mp3','MP3','🎵'],['wav','WAV','🎶'],['applemusic','Apple Music','🍎']];
+const MNAV=[['mp3','MP3','🎵'],['wav','WAV','🎶'],['applemusic','Apple Music','🍎'],['spotify','Spotify','🎧']];
+const isLive=k=>k==='applemusic'||k==='spotify';
 let MLIB={mp3:null,wav:null},MEXTRA={mutagen:false,smtc:false,tray:false};
 let AM={title:'',artist:'',album:'',art:null,playing:false,position:0,duration:0};
 let mplaying=false,mqueue=[],mIdx=-1,amTimer=null,mopen=false;
@@ -238,16 +239,16 @@ function fmtT(s){s=Math.max(0,Math.round(s||0));return Math.floor(s/60)+':'+Stri
 async function ensureArt(t){if(!t||t._art!==undefined)return;t._art=null;const url=await inv('music_artwork',{path:t.path});t._art=url||null;if(curTrack()===t)renderWidget();if(mopen)renderPanel()}
 async function chooseFolder(kind){const p=await inv('pick',{folder:true});if(!p)return;S.settings[kind+'Folder']=p;save();MLIB[kind]=null;if(mopen)renderPanel();if(view=='settings')render(1)}
 async function loadLib(kind){const folder=S.settings[kind+'Folder'];if(!folder){MLIB[kind]=[];if(mopen)renderPanel();return}MLIB[kind]='loading';if(mopen)renderPanel();MLIB[kind]=await inv('music_scan',{folder,kind});if(mopen)renderPanel()}
-function selectSource(src){S.settings.musicSource=src;save();if(src==='applemusic'){startAMPoll()}else{stopAMPoll();if(MLIB[src]==null)loadLib(src)}renderSidebar();renderPanel();renderWidget()}
+function selectSource(src){S.settings.musicSource=src;save();AM={title:'',artist:'',album:'',art:null,playing:false,position:0,duration:0};if(isLive(src)){startAMPoll()}else{stopAMPoll();if(MLIB[src]==null)loadLib(src)}renderSidebar();renderPanel();renderWidget()}
 function setView(v){S.settings.musicView=v;save();renderPanel()}
 function playAt(kind,i){mqueue=MLIB[kind]||[];mIdx=i;const t=mqueue[i];if(!t)return;player.src=fileUrl(t.path);player.currentTime=0;player.play()?.catch?.(()=>{});ensureArt(t);renderPanel();renderWidget()}
 function musicNext(){if(mIdx<0||!mqueue.length)return;playAt(S.settings.musicSource,(mIdx+1)%mqueue.length)}
 function musicPrev(){if(mIdx<0||!mqueue.length)return;playAt(S.settings.musicSource,(mIdx-1+mqueue.length)%mqueue.length)}
-function togglePlay(){if(S.settings.musicSource==='applemusic'){amCtl('playpause');return}if(!curTrack())return;player.paused?player.play()?.catch?.(()=>{}):player.pause()}
-function seekBar(e,el){if(S.settings.musicSource==='applemusic'||!player.duration)return;const r=el.getBoundingClientRect();player.currentTime=(e.clientX-r.left)/r.width*player.duration}
-async function startAMPoll(){stopAMPoll();const tick=async()=>{const d=await inv('music_now_playing');AM=d?{...AM,...d}:{title:'',artist:'',album:'',art:null,playing:false,position:0,duration:0};renderWidget();if(mopen)renderPanel()};await tick();amTimer=setInterval(tick,4000)}
+function togglePlay(){if(isLive(S.settings.musicSource)){amCtl('playpause');return}if(!curTrack())return;player.paused?player.play()?.catch?.(()=>{}):player.pause()}
+function seekBar(e,el){if(isLive(S.settings.musicSource)||!player.duration)return;const r=el.getBoundingClientRect();player.currentTime=(e.clientX-r.left)/r.width*player.duration}
+async function startAMPoll(){stopAMPoll();const tick=async()=>{const d=await inv('music_now_playing',{source:S.settings.musicSource});AM=d?{...AM,...d}:{title:'',artist:'',album:'',art:null,playing:false,position:0,duration:0};renderWidget();if(mopen)renderPanel()};await tick();amTimer=setInterval(tick,4000)}
 function stopAMPoll(){clearInterval(amTimer);amTimer=null}
-function amCtl(action){inv('music_control',{action});setTimeout(async()=>{const d=await inv('music_now_playing');if(d){AM={...AM,...d};renderWidget();if(mopen)renderPanel()}},350)}
+function amCtl(action){const source=S.settings.musicSource;inv('music_control',{action,source});setTimeout(async()=>{const d=await inv('music_now_playing',{source});if(d){AM={...AM,...d};renderWidget();if(mopen)renderPanel()}},350)}
 function toggleMusicPanel(){mopen=!mopen;$('#mp').classList.toggle('open',mopen);if(mopen){renderSidebar();renderPanel()}}
 
 let tipTimer=null;
@@ -257,9 +258,9 @@ function initTooltips(){
 }
 
 function compactHtml(){
- const src=S.settings.musicSource,live=src==='applemusic';
+ const src=S.settings.musicSource,live=isLive(src);
  const t=live?AM:(curTrack()||{});
- const title=live?(AM.title||'Apple Music'):(t.title||'Nothing playing');
+ const title=live?(AM.title||MNAV.find(n=>n[0]===src)[1]):(t.title||'Nothing playing');
  const artist=live?AM.artist:(t.artist||(src.toUpperCase()+' library'));
  const art=live?AM.art:(t._art||null);
  const playing=live?AM.playing:mplaying;
@@ -271,7 +272,7 @@ function compactHtml(){
 function renderWidget(){const c=$('#mcompact');if(c)c.innerHTML=compactHtml()}
 
 function sidebarHtml(){
- return MNAV.filter(([k])=>k!=='applemusic'||DET.applemusic).map(([k,label,ic])=>`<button class="${S.settings.musicSource===k?'on':''}" data-tip="${label}" onclick="selectSource('${k}')">${ic}<small>${label}</small></button>`).join('');
+ return MNAV.filter(([k])=>!isLive(k)||DET[k]).map(([k,label,ic])=>`<button class="${S.settings.musicSource===k?'on':''}" data-tip="${label}" onclick="selectSource('${k}')">${ic}<small>${label}</small></button>`).join('');
 }
 function renderSidebar(){const s=$('#msb');if(s)s.innerHTML=sidebarHtml()}
 function viewToggleHtml(){
@@ -291,11 +292,12 @@ function libRows(kind){
  return '<div class="tgrid">'+lib.map((t,i)=>`<button class="tcard ${mIdx===i&&S.settings.musicSource===kind?'now':''}" onclick="playAt('${kind}',${i})"><div class="ta" style="${t._art?`background-image:url(${t._art})`:''}">${t._art?'':'🎵'}</div><b>${esc(t.title)}</b><small>${esc(t.artist||'')}</small></button>`).join('')+'</div>';
 }
 function amHtml(){
- if(!MEXTRA.smtc)return `<div class="mempty">Live Apple Music sync needs a one-time extra install.<br><small>pip install winsdk (then rebuild the .exe)</small><br><button class="btn" style="margin-top:10px" onclick="inv('launch',{items:[{kind:'app',app:'applemusic'}]})">Open Apple Music</button></div>`;
- if(!AM.title)return `<div class="mempty">Nothing playing in Apple Music right now.<br><button class="btn" style="margin-top:10px" onclick="inv('launch',{items:[{kind:'app',app:'applemusic'}]})">Open Apple Music</button></div>`;
+ const src=S.settings.musicSource,nm=MNAV.find(n=>n[0]===src)[1],ic=MNAV.find(n=>n[0]===src)[2],ob=`<button class="btn" style="margin-top:10px" onclick="inv('launch',{items:[{kind:'app',app:'${src}'}]})">Open ${nm}</button>`;
+ if(!MEXTRA.smtc)return `<div class="mempty">Live ${nm} sync needs the Windows media package.<br><small>pip install -r requirements.txt</small><br>${ob}</div>`;
+ if(!AM.title)return `<div class="mempty">Nothing playing in ${nm} right now.<br>${ob}</div>`;
  const pct=AM.duration?AM.position/AM.duration*100:0;
  return `<div style="padding:18px;display:flex;flex-direction:column;align-items:center;gap:10px;height:100%;justify-content:center">
- <div class="ta ${AM.playing?'live':''}" style="width:148px;height:148px;border-radius:18px;${AM.art?`background-image:url(${AM.art})`:''}">${AM.art?'':'🍎'}</div>
+ <div class="ta ${AM.playing?'live':''}" style="width:148px;height:148px;border-radius:18px;${AM.art?`background-image:url(${AM.art})`:''}">${AM.art?'':ic}</div>
  <b style="font-size:16px">${esc(AM.title)}</b><small>${esc(AM.artist)}${AM.album?' · '+esc(AM.album):''}</small>
  <div class="row" style="width:100%;max-width:320px;margin:6px 0 0"><small>${fmtT(AM.position)}</small><div class="mbar" onclick="seekBar(event,this)"><i style="width:${pct}%"></i></div><small>${fmtT(AM.duration)}</small></div>
  <div class="row" style="margin:2px 0 0"><button class="btn" onclick="amCtl('prev')">⏮</button><button class="btn pri" onclick="amCtl('playpause')">${AM.playing?'⏸':'▶'}</button><button class="btn" onclick="amCtl('next')">⏭</button></div></div>`;
@@ -303,8 +305,8 @@ function amHtml(){
 function renderPanel(){
  const c=$('#mcontent');if(!c)return;
  const src=S.settings.musicSource,label=MNAV.find(n=>n[0]===src);
- c.innerHTML=`<div class="mtop"><b style="font-size:15px">${label[2]} ${label[1]}</b>${src!=='applemusic'?viewToggleHtml():'<button class="mctl" data-tip="Collapse" onclick="toggleMusicPanel()">⤡</button>'}</div>`+(src==='applemusic'?amHtml():libRows(src));
- if(src!=='applemusic'&&MLIB[src]==null)loadLib(src);
+ c.innerHTML=`<div class="mtop"><b style="font-size:15px">${label[2]} ${label[1]}</b>${!isLive(src)?viewToggleHtml():'<button class="mctl" data-tip="Collapse" onclick="toggleMusicPanel()">⤡</button>'}</div>`+(isLive(src)?amHtml():libRows(src));
+ if(!isLive(src)&&MLIB[src]==null)loadLib(src);
 }
 
 window.addEventListener('pywebviewready',async()=>{
@@ -313,11 +315,11 @@ window.addEventListener('pywebviewready',async()=>{
  S.notes.forEach(n=>{n.color=n.color||NC[0];n.pin=!!n.pin;n.ts=n.ts||Date.now();n.body=n.body||'';n.title=n.title||''});
  [BG,profiles,DET]=await Promise.all([inv('load_bg'),inv('chrome_profiles'),inv('detect_apps')]);
  MEXTRA=(await inv('has_music_extras'))||MEXTRA;
- if(S.settings.musicSource==='applemusic'&&!DET.applemusic)S.settings.musicSource='mp3';
+ if(isLive(S.settings.musicSource)&&!DET[S.settings.musicSource])S.settings.musicSource='mp3';
  BG=BG||'';applyTheme();render(1);
  initTooltips();renderWidget();
  inv('set_tray_pref',{on:!!S.settings.trayEnabled});
- if(S.settings.musicSource==='applemusic')startAMPoll();
+ if(isLive(S.settings.musicSource))startAMPoll();
  if(await inv('is_autostart')&&S.settings.autoLaunch&&S.workspaces.length)countdown();
 });
 </script></body></html>

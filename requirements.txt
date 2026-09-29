@@ -1,1 +1,11 @@
+# ELE-TRON requirements (Python 3.13 or newer, Windows 10/11)
 pywebview
+mutagen
+pystray
+pillow
+winrt-runtime
+winrt-Windows.Foundation
+winrt-Windows.Foundation.Collections
+winrt-Windows.Storage
+winrt-Windows.Storage.Streams
+winrt-Windows.Media.Control
