@@ -7,7 +7,7 @@
 
 # ELE-TRON
 
-![ELE-TRON demo](assets/brag.gif)
+![ELE-TRON Live-Demo](assets/ele-tron.gif)
 
 A lightweight, glass-style launcher that starts with Windows and opens your saved workspaces (Chrome profiles, Discord, Steam, WhatsApp, Telegram, any app, file, folder or link) automatically, along with a clean dashboard for notes, quick links and apps.
 
