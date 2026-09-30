@@ -7,6 +7,8 @@
 
 # ELE-TRON
 
+![ELE-TRON demo](assets/brag.gif)
+
 A lightweight, glass-style launcher that starts with Windows and opens your saved workspaces (Chrome profiles, Discord, Steam, WhatsApp, Telegram, any app, file, folder or link) automatically, along with a clean dashboard for notes, quick links and apps.
 
 Hi, I'm **Chaitany**, also known as **aefxcharlie** on the internet. I built ELE-TRON as a small, fast, fully local startup launcher: no cloud, no accounts, no background AI, just a tidy panel that sets up your PC the way you left it.
