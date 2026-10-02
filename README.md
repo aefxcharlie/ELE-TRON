@@ -48,9 +48,9 @@ Comparison between [v1.1.0](https://github.com/aefxcharlie/ELE-TRON/releases/tag
 | Activity trends | — | Graphs for **7 days**, **30 days**, **6 months** and **1 year**, each with a daily average and a top-apps breakdown |
 | Missing-data days | — | Handled gracefully: a day, week or month with nothing recorded shows "No activity recorded", never a crash |
 | Ignored processes | — | Windows shell/background surfaces (Explorer, `dwm.exe`, `svchost.exe`, `RuntimeBroker.exe`, Search, Lock Screen, and more) and ELE-TRON itself are never counted |
-| Activity data file | — | `activity.json` in `%APPDATA%\ELE-TRON\`, one entry per day per app, logging the exact start/end time of every session |
+| Activity data file | — | `activity.json` in `%APPDATA%\ELE-TRON\`, one entry per day with each app's accumulated seconds that day |
 | Privacy control | — | **Track app activity** toggle in Settings; turning it off stops tracking immediately |
-| New Python dependencies | — | None. Foreground-window detection uses `ctypes` against `user32.dll`/`kernel32.dll`, already part of the standard library |
+| New Python dependencies | — | `pywin32` and `psutil` (already in `requirements.txt`), used to identify the foreground window's process |
 
 Greetings in v1.2.0 (unchanged since v1.1.0):
 
@@ -179,7 +179,7 @@ Everything is stored in `%APPDATA%\ELE-TRON\`:
 
 - `data.json` holds workspaces, notes, links and settings.
 - `bg.txt` holds your background image.
-- `activity.json` holds your app-usage log: one entry per day, per app, with the exact start and end time (`HH:MM:SS`) of every session.
+- `activity.json` holds your app-usage log: one entry per day, with each app's total tracked seconds for that day.
 
 It is never stored in the app folder, so sharing the app never shares your data. Your MP3/WAV folder locations are stored here too, not the audio files themselves. To reset the app, close it and delete that folder. To reset just the activity log, delete `activity.json` alone, the rest of your data is untouched.
 
