@@ -3,6 +3,8 @@ pywebview
 mutagen
 pystray
 pillow
+pywin32
+psutil
 winrt-runtime
 winrt-Windows.Foundation
 winrt-Windows.Foundation.Collections
