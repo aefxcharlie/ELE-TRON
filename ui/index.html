@@ -1,44 +1,54 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ELE-TRON</title>
 <style>
-:root{--gb:28px;--ga:.07;--bgb:0px;--dim:.25;--b:rgba(255,255,255,.14);--t:#f2f4fa;--m:#a3abc4;--a:#7c8cff;color-scheme:dark}
+:root{--gb:28px;--ga:.07;--bgb:0px;--dim:.25;--b:rgba(255,255,255,.14);--t:#f2f4fa;--m:#a3abc4;--a:#7c8cff;--a2:#9b5cff;--atint:rgba(124,140,255,.14);color-scheme:dark}
 *{box-sizing:border-box;margin:0;font-family:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif}
 html,body{height:100%;overflow:hidden;background:#090b14;color:var(--t)}
 #bg{position:fixed;inset:-50px;background:#090b14 center/cover no-repeat;filter:blur(var(--bgb));z-index:0;transition:filter .3s}
 #bg::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,var(--dim));transition:background .3s}
 .orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;animation:float 20s ease-in-out infinite alternate}
-.o1{width:520px;height:520px;background:#5b6cff;top:-100px;left:-60px}
+.o1{width:520px;height:520px;background:var(--a);top:-100px;left:-60px}
 .o2{width:460px;height:460px;background:#ff5fa2;bottom:-120px;right:-40px;animation-delay:-7s}
 .o3{width:380px;height:380px;background:#22d3c5;top:42%;left:46%;opacity:.3;animation-delay:-13s}
 body.hasbg .orb{display:none}
 @keyframes float{to{transform:translate(90px,60px) scale(1.15)}}
 .app{position:relative;z-index:1;display:flex;height:100%;gap:var(--gap,14px);padding:var(--gap,14px)}
 .glass{background:rgba(255,255,255,var(--ga));border:1px solid var(--b);backdrop-filter:blur(var(--gb)) saturate(170%);-webkit-backdrop-filter:blur(var(--gb)) saturate(170%);border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.28);transition:background .3s,border-color .3s,backdrop-filter .3s}
-nav{width:210px;padding:16px 10px;display:flex;flex-direction:column;gap:4px;flex:none}
+nav{width:210px;padding:16px 10px;display:flex;flex-direction:column;gap:4px;flex:none;position:relative}
 nav h1{font-size:16px;font-weight:600;padding:6px 12px 16px}
-nav button{display:flex;gap:10px;align-items:center;background:none;border:0;color:var(--m);font-size:14px;padding:10px 12px;border-radius:12px;cursor:pointer;text-align:left;transition:.2s}
-nav button:hover{background:rgba(255,255,255,.08);color:var(--t)}nav button.on{background:rgba(255,255,255,.14);color:var(--t)}
+nav button{display:flex;gap:10px;align-items:center;background:none;border:0;color:var(--m);font-size:14px;padding:10px 12px;border-radius:12px;cursor:pointer;text-align:left;transition:background .25s,color .25s,transform .2s cubic-bezier(.16,1,.3,1)}
+nav button:hover{background:rgba(255,255,255,.08);color:var(--t);transform:translateX(2px)}nav button.on{background:rgba(255,255,255,.14);color:var(--t)}
 main{flex:1;padding:28px 32px 96px;overflow:auto}
 ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px}
 .hero{margin-bottom:26px}.hero h1{font-size:34px;font-weight:600;letter-spacing:-.6px}.hero p{color:var(--m);margin-top:6px}
 .head{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:22px}.head h2{font-size:26px;font-weight:600;letter-spacing:-.4px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
-.tile,.card{position:relative;background:rgba(255,255,255,.07);border:1px solid var(--b);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:6px;transition:transform .25s cubic-bezier(.2,.8,.2,1),background .25s,border-color .25s}
+.tile,.card{position:relative;background:rgba(255,255,255,.07);border:1px solid var(--b);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:6px;transition:transform .35s cubic-bezier(.16,1,.3,1),background .3s,border-color .3s,box-shadow .35s;overflow:hidden}
 .tile{height:160px;cursor:pointer;justify-content:flex-end}
-.tile:hover,.grid .card:hover{transform:translateY(-4px);background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.28)}
+.tile::before,.grid .card::before{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.1),transparent 60%);opacity:0;transition:opacity .3s;pointer-events:none}
+.tile:hover::before,.grid .card:hover::before{opacity:1}
+.tile:hover,.grid .card:hover{transform:translateY(-6px) scale(1.012);background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.28);box-shadow:0 16px 36px -10px rgba(0,0,0,.4)}
 .ic{position:absolute;top:18px;left:18px;width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:26px;background:linear-gradient(135deg,var(--c));box-shadow:0 8px 22px rgba(0,0,0,.35)}
 b{font-weight:600}.tile b,.card b{font-size:16px}
 small{color:var(--m);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .big{font-size:32px;margin-bottom:6px}
-.fade .tile,.fade .card{animation:up .55s cubic-bezier(.16,.84,.2,1) both;animation-delay:calc(var(--i,0)*45ms)}
-@keyframes up{from{opacity:0;transform:translateY(16px) scale(.97);filter:blur(4px)}to{filter:blur(0)}}
+.fade .tile,.fade .card{animation:up .6s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--i,0)*50ms)}
+@keyframes up{from{opacity:0;transform:translateY(18px) scale(.95);filter:blur(5px)}60%{filter:blur(0)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+.fade .hero,.fade .head{animation:fadeIn .5s cubic-bezier(.16,1,.3,1) both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 .row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}.grow{flex:1;min-width:120px}
 .in{background:rgba(255,255,255,.09);border:1px solid var(--b);color:var(--t);border-radius:12px;padding:10px 12px;font-size:14px;outline:none;transition:.2s}
-.in:focus{border-color:var(--a);box-shadow:0 0 0 3px rgba(124,140,255,.25)}select.in option{background:#1a1d2e}
-.btn{background:rgba(255,255,255,.11);border:1px solid var(--b);color:var(--t);border-radius:12px;padding:9px 16px;font-size:14px;cursor:pointer;transition:.2s}
-.btn:hover{background:rgba(255,255,255,.2)}.btn:active{transform:scale(.96)}
-.pri{background:linear-gradient(135deg,#6a7bff,#9b5cff);border:0}.pri:hover{filter:brightness(1.12);background:linear-gradient(135deg,#6a7bff,#9b5cff)}
+.in:focus{border-color:var(--a);box-shadow:0 0 0 3px var(--atint)}select.in option{background:#1a1d2e}
+.btn{background:rgba(255,255,255,.11);border:1px solid var(--b);color:var(--t);border-radius:12px;padding:9px 16px;font-size:14px;cursor:pointer;transition:transform .2s cubic-bezier(.16,1,.3,1),background .2s;overflow:hidden;position:relative}
+.btn:hover{background:rgba(255,255,255,.2);transform:translateY(-1px)}.btn:active{transform:scale(.96)}
+.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.35);transform:scale(0);animation:rip .6s cubic-bezier(.16,1,.3,1);pointer-events:none}
+@keyframes rip{to{transform:scale(1);opacity:0}}
+.pri{background:linear-gradient(135deg,var(--a),var(--a2));background-size:160% 160%;background-position:0% 50%;border:0;transition:background-position .4s cubic-bezier(.16,1,.3,1),transform .2s cubic-bezier(.16,1,.3,1),filter .2s}
+.pri:hover{filter:brightness(1.12);background-position:100% 50%;transform:translateY(-1px)}
 .dng{color:#ff8095}.chip{padding:8px 14px;border-radius:999px;font-size:13.5px}
+.seg{display:inline-flex;background:rgba(255,255,255,.06);border:1px solid var(--b);border-radius:12px;padding:3px;gap:2px}
+.seg button{background:none;border:0;color:var(--m);font-size:13.5px;padding:7px 14px;border-radius:9px;cursor:pointer;transition:.18s}
+.seg button:hover{color:var(--t)}.seg button.on{background:var(--a);color:#fff}
 .x{position:absolute;top:12px;right:12px;background:none;border:0;color:var(--m);cursor:pointer;font-size:14px;padding:4px 8px;border-radius:8px}.x:hover{background:rgba(255,255,255,.14);color:#ff8095}
 .wide{max-width:780px;gap:14px;margin-bottom:16px}
 .wide label{display:flex;flex-direction:column;gap:6px;color:var(--m);font-size:13px}
@@ -46,23 +56,37 @@ small{color:var(--m);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;whi
 .wide h3{font-size:15px;font-weight:600}
 input[type=checkbox]{appearance:none;width:44px;height:26px;border-radius:13px;background:rgba(255,255,255,.18);position:relative;cursor:pointer;transition:.25s;flex:none}
 input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.25s}
-input[type=checkbox]:checked{background:#5b6cff}input[type=checkbox]:checked::after{transform:translateX(18px)}
-input[type=range]{accent-color:#7c8cff;width:100%}
+input[type=checkbox]:checked{background:var(--a)}input[type=checkbox]:checked::after{transform:translateX(18px)}
+input[type=range]{accent-color:var(--a);width:100%}
 .it{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px;border-radius:14px;background:rgba(255,255,255,.05)}
 .tag{font-size:14px;font-weight:600;min-width:110px}
 .note{cursor:pointer;border-left:3px solid var(--nc);box-shadow:0 0 34px -14px var(--nc);min-height:150px}
 .pv{max-height:112px;overflow:hidden;color:#cfd5ea;font-size:13px;line-height:1.55;-webkit-mask-image:linear-gradient(#000 65%,transparent);mask-image:linear-gradient(#000 65%,transparent)}
 .pin{position:absolute;top:12px;right:14px;font-size:13px}
-#ov,#ne{position:fixed;inset:0;display:none;place-items:center;background:rgba(5,6,12,.55);backdrop-filter:blur(10px);z-index:9}
-#ov.on,#ne.on{display:grid}
-.ned{width:min(780px,92%);height:min(580px,88%);padding:22px;display:flex;flex-direction:column;gap:12px;border-top:3px solid var(--nc);animation:pop .4s cubic-bezier(.2,1.2,.3,1)}
-.ned textarea{flex:1;resize:none;line-height:1.65;font-size:15px}.ttl{font-size:21px;font-weight:600}
+#ov,#ne{position:fixed;inset:0;display:none;place-items:center;background:rgba(5,6,12,.55);backdrop-filter:blur(10px);z-index:9;opacity:0;transition:opacity .25s}
+#ov.on,#ne.on{display:grid;opacity:1}
+.ned{width:min(780px,92%);height:min(580px,88%);padding:22px;display:flex;flex-direction:column;gap:10px;border-top:3px solid var(--nc);animation:pop .4s cubic-bezier(.2,1.2,.3,1)}
+.ttl{font-size:21px;font-weight:600}
+.ntools{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 2px;border-bottom:1px solid var(--b)}
+.ntools button{background:none;border:0;color:var(--m);font-size:14px;width:30px;height:30px;border-radius:8px;cursor:pointer;display:grid;place-items:center;transition:.15s}
+.ntools button:hover{background:rgba(255,255,255,.1);color:var(--t)}
+.ntools button.on{background:var(--atint);color:var(--t)}
+.ntools select{background:rgba(255,255,255,.08);border:1px solid var(--b);color:var(--t);border-radius:8px;padding:5px 6px;font-size:12.5px;outline:none}
+.ntools input[type=color]{width:28px;height:28px;border:0;border-radius:8px;background:none;cursor:pointer;padding:0}
+.ntools .sep{width:1px;height:20px;background:var(--b);margin:0 4px}
+#nb{flex:1;overflow:auto;line-height:1.65;font-size:15px;outline:none;padding:4px}
+#nb li{margin:3px 0}
+.chk{display:flex;align-items:flex-start;gap:9px;margin:4px 0;cursor:pointer;list-style:none}
+.chk .cdot{width:19px;height:19px;border-radius:50%;border:2px solid var(--m);flex:none;margin-top:1px;transition:transform .25s cubic-bezier(.34,1.56,.64,1),background .2s,border-color .2s;display:grid;place-items:center;font-size:12px}
+.chk.done .cdot{background:var(--a);border-color:var(--a);color:#fff;transform:scale(1.1)}
+.chk.done .ctxt{color:var(--m);text-decoration:line-through}
+.chk .ctxt{flex:1;outline:none}
 .nh,.dots{display:flex;gap:10px;align-items:center}
 .dots i{width:22px;height:22px;border-radius:50%;background:var(--c);cursor:pointer;transition:.2s;border:2px solid transparent}
 .dots i:hover{transform:scale(1.15)}.dots i.on{border-color:#fff}
 .pop{padding:32px 40px;display:flex;flex-direction:column;align-items:center;gap:10px;animation:pop .45s cubic-bezier(.2,1.2,.3,1)}
-@keyframes pop{from{opacity:0;transform:scale(.9)}}
-.num{font-size:84px;font-weight:200;line-height:1;background:linear-gradient(135deg,#8fa0ff,#ff7ab8);-webkit-background-clip:text;background-clip:text;color:transparent}
+@keyframes pop{from{opacity:0;transform:scale(.92) translateY(6px);filter:blur(3px)}to{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}}
+.num{font-size:84px;font-weight:200;line-height:1;background:linear-gradient(135deg,var(--a),var(--a2));-webkit-background-clip:text;background-clip:text;color:transparent}
 #toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%,30px);opacity:0;padding:11px 20px;border-radius:14px;font-size:14px;background:rgba(30,33,52,.92);border:1px solid var(--b);transition:.35s cubic-bezier(.2,.9,.25,1);pointer-events:none;z-index:20}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 :focus-visible{outline:2px solid var(--a);outline-offset:2px}
@@ -85,7 +109,7 @@ input[type=range]{accent-color:#7c8cff;width:100%}
 #mp .msb{width:78px;flex:none;padding:16px 8px;display:flex;flex-direction:column;gap:6px;align-items:center;border-right:1px solid var(--b)}
 #mp .msb button{width:54px;height:52px;border-radius:16px;background:none;border:0;color:var(--m);font-size:19px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:.2s}
 #mp .msb button:hover{background:rgba(255,255,255,.08);color:var(--t)}
-#mp .msb button.on{background:rgba(124,140,255,.22);color:#c7cfff}
+#mp .msb button.on{background:var(--atint);color:var(--t)}
 #mp .msb button small{font-size:9px;color:inherit}
 #mp .mcontent{flex:1;display:flex;flex-direction:column;min-width:0}
 #mp .mtop{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;flex:none;border-bottom:1px solid var(--b)}
@@ -95,14 +119,14 @@ input[type=range]{accent-color:#7c8cff;width:100%}
 #mp .mbody{flex:1;min-height:0;overflow:auto}
 #mp .mlist{padding:8px 12px 12px}
 .trow{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:12px;cursor:pointer;transition:.16s}
-.trow:hover{background:rgba(255,255,255,.06)}.trow.now{background:rgba(124,140,255,.16)}
+.trow:hover{background:rgba(255,255,255,.06)}.trow.now{background:var(--atint)}
 .trow .ta{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#3a3f66,#242840);flex:none;background-size:cover;background-position:center;display:grid;place-items:center;font-size:14px}
 .trow .ti{flex:1;min-width:0}.trow .ti b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .trow .ti small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px;padding:10px 12px 14px}
 .tcard{cursor:pointer;text-align:left;color:var(--t);background:rgba(255,255,255,.05);border:1px solid transparent;border-radius:12px;padding:6px;transition:.2s}
 .tcard:hover{background:rgba(255,255,255,.1);transform:translateY(-2px)}
-.tcard.now{border-color:#8fa0ff}
+.tcard.now{border-color:var(--a)}
 .tcard .ta{width:100%;aspect-ratio:1;border-radius:9px;background:linear-gradient(135deg,#3a3f66,#242840);margin-bottom:5px;background-size:cover;background-position:center;display:grid;place-items:center;font-size:16px}
 .tcard b{display:block;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tcard small{display:block;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -112,7 +136,7 @@ input[type=range]{accent-color:#7c8cff;width:100%}
 .npmeta{width:100%}.npmeta b{font-size:18px;display:block}.npmeta small{font-size:13px;display:block;margin-top:4px}
 .mbar{height:6px;background:rgba(255,255,255,.14);border-radius:3px;overflow:hidden;flex:1;cursor:pointer;transition:height .15s}
 .mbar:hover{height:8px}
-.mbar i,.cbar i{display:block;height:100%;background:linear-gradient(90deg,#7c8cff,#ff7ab8);width:0%;transition:width .25s linear}
+.mbar i,.cbar i{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--a2));width:0%;transition:width .25s linear}
 [data-tip]{position:relative}
 .tip{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%) translateY(4px);background:rgba(18,20,32,.96);border:1px solid var(--b);color:var(--t);font-size:11.5px;padding:5px 9px;border-radius:8px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:30}
 .tip.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -151,12 +175,21 @@ body.resizing .glass{backdrop-filter:none!important;-webkit-backdrop-filter:none
 @media(max-width:620px),(max-height:520px){#mp:not(.open){width:54px;height:54px;border-radius:50%}#mp:not(.open) .mctl,#mp:not(.open) .cbar,#mp:not(.open) .exp{display:none}#mp:not(.open) .mcompact{justify-content:center;padding:0}}
 @media(max-width:620px){#mp .msb{width:54px;padding:12px 4px}#mp .msb button{width:44px;height:44px;font-size:16px}#mp .msb button small{display:none}#mp .fctl .mctl:not(.big){display:none}#mp .amcard{padding:12px}}
 @media(max-height:520px){main{padding-bottom:76px}#mp .amcard .ta{width:72px;height:72px}}
+/* ---- accent color picker (docked bottom of nav rail, never overlaps page content) ---- */
+#acpick{width:34px;height:34px;border-radius:50%;cursor:pointer;display:grid;place-items:center;transition:transform .2s;margin:10px auto 4px}
+#acpick::after{content:"";width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,var(--a),var(--a2));box-shadow:0 0 0 2px rgba(255,255,255,.2)}
+#acpick:hover{transform:scale(1.1)}
+#acmenu{position:absolute;left:12px;bottom:58px;z-index:19;padding:10px;display:none;grid-template-columns:repeat(5,1fr);gap:8px;width:184px}
+#acmenu.on{display:grid;animation:pop .22s cubic-bezier(.2,1.2,.3,1)}
+#acmenu i{width:28px;height:28px;border-radius:50%;cursor:pointer;display:block;border:2px solid transparent;transition:transform .2s cubic-bezier(.16,1,.3,1),border-color .15s;animation:swIn .3s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--si,0)*25ms)}
+@keyframes swIn{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+#acmenu i:hover{transform:scale(1.22)}#acmenu i.on{border-color:#fff}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
 .live{animation:pulse 2.2s ease-in-out infinite}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style></head><body>
 <div id="bg"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div></div>
-<div class="app"><nav class="glass" id="nav"></nav><main class="glass" id="main"></main></div>
+<div class="app"><nav class="glass" id="nav" style="position:relative"></nav><main class="glass" id="main"></main></div>
 <div id="ov"></div><div id="ne"></div><div id="toast"></div>
 <div id="mp"><div class="mcompact" id="mcompact" onclick="toggleMusicPanel()"></div><div class="mexpand"><div class="msb" id="msb"></div><div class="mcontent" id="mcontent"><div class="mtop" id="mtop"></div><div class="mbody" id="mbody"></div><div class="mfoot" id="mfoot"></div></div></div></div>
 <script>
@@ -167,7 +200,9 @@ let S,BG='',DET={},profiles=[],view='home',edit=null,nopen=null,q='',st,tt,timer
 const NAV=[['home','Home','🏠',''],['workspaces','Workspaces','🚀','#ff8a5c,#ff4f81'],['notes','Notes','📝','#ffd45c,#ffa63d'],['activity','Your Activity','📊','#a78bfa,#f472b6'],['settings','Settings','⚙️','#94a3b8,#64748b']];
 const APPS={chrome:['Chrome','🌐'],discord:['Discord','💬'],steam:['Steam','🎮'],whatsapp:['WhatsApp','🟢'],telegram:['Telegram','✈️'],applemusic:['Apple Music','🎵'],spotify:['Spotify','🎧']};
 const NC=['#7c8cff','#ff7ab8','#ffd45c','#34d3c5','#ff8a5c','#a78bfa'];
-const seed=()=>({settings:{name:'Dark Defender',autoLaunch:true,delay:5,defaultWs:'w1',autostart:false,trayEnabled:true,activityTracking:true,musicSource:'mp3',musicView:'list',mp3Folder:'',wavFolder:'',recent:[]},theme:{bgBlur:0,dim:25,gBlur:28,gAlpha:7,fit:'cover',gap:14},workspaces:[{id:'w1',name:'Work',icon:'💼',items:[{kind:'chrome',target:'https://proton.me/mail',profile:'Default'}]}],notes:[],links:[]});
+const ACCENTS=[['Periwinkle','#7c8cff','#9b5cff'],['Cyan','#22d3ee','#0ea5e9'],['Red','#f87171','#dc2626'],['Green','#34d399','#16a34a'],['Blue','#60a5fa','#2563eb'],['Violet','#a78bfa','#7c3aed'],['Pink','#f472b6','#ec4899'],['Orange','#fb923c','#ea580c'],['Brown','#c89b6e','#92673f'],['Sun','#fbbf24','#f59e0b']];
+function hex2rgb(h){const n=parseInt(h.slice(1),16);return`${(n>>16)&255},${(n>>8)&255},${n&255}`}
+const seed=()=>({settings:{name:'Dark Defender',autoLaunch:true,delay:5,defaultWs:'w1',autostart:false,trayEnabled:true,activityTracking:true,musicSource:'mp3',musicView:'list',mp3Folder:'',wavFolder:'',recent:[]},theme:{bgBlur:0,dim:25,gBlur:28,gAlpha:7,fit:'cover',gap:14,accent:0},workspaces:[{id:'w1',name:'Work',icon:'💼',items:[{kind:'chrome',target:'https://proton.me/mail',profile:'Default'}]}],notes:[],links:[]});
 const save=()=>{clearTimeout(st);st=setTimeout(()=>inv('save_data',{data:S}),300)};
 function toast(m){const t=$('#toast');t.textContent=m||'';t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3000)}
 const head=(t,a='')=>`<div class="head"><h2>${t}</h2><div class="row" style="margin:0">${a}</div></div>`;
@@ -177,8 +212,21 @@ const lc=b=>b.replace(/\s/g,'').length;
 const cnt=k=>k=='workspaces'?S.workspaces.length:k=='notes'?S.notes.length:S[k].length;
 const popts=p=>(profiles.length?profiles:[{dir:'Default',name:'Default'}]).map(x=>`<option value="${esc(x.dir)}" ${x.dir==p?'selected':''}>${esc(x.name||x.dir)}${x.email?' · '+esc(x.email):''}</option>`).join('');
 
-function applyTheme(){const t=S.theme,r=document.documentElement.style;r.setProperty('--gb',t.gBlur+'px');r.setProperty('--ga',t.gAlpha/100);r.setProperty('--bgb',t.bgBlur+'px');r.setProperty('--dim',t.dim/100);r.setProperty('--gap',t.gap+'px');$('#bg').style.backgroundImage=BG?`url(${BG})`:'';$('#bg').style.backgroundSize={cover:'cover',contain:'contain',stretch:'100% 100%',center:'auto'}[t.fit]||'cover';document.body.classList.toggle('hasbg',!!BG)}
+function applyTheme(){const t=S.theme,r=document.documentElement.style;r.setProperty('--gb',t.gBlur+'px');r.setProperty('--ga',t.gAlpha/100);r.setProperty('--bgb',t.bgBlur+'px');r.setProperty('--dim',t.dim/100);r.setProperty('--gap',t.gap+'px');
+ const ac=ACCENTS[t.accent||0]||ACCENTS[0];r.setProperty('--a',ac[1]);r.setProperty('--a2',ac[2]);r.setProperty('--atint','rgba('+hex2rgb(ac[1])+',.16)');
+ $('#bg').style.backgroundImage=BG?`url(${BG})`:'';$('#bg').style.backgroundSize={cover:'cover',contain:'contain',stretch:'100% 100%',center:'auto'}[t.fit]||'cover';document.body.classList.toggle('hasbg',!!BG)}
 const th=(k,v)=>{S.theme[k]=v;applyTheme();save()};
+function renderAccentMenu(){const i=S.theme.accent||0;$('#acmenu').innerHTML=ACCENTS.map((a,n)=>`<i style="background:linear-gradient(135deg,${a[1]},${a[2]});--si:${n}" class="${n==i?'on':''}" data-tip="${a[0]}" onclick="th('accent',${n});renderAccentMenu()"></i>`).join('')}
+function toggleAccentMenu(e){e.stopPropagation();$('#acmenu').classList.toggle('on')}
+document.addEventListener('click',e=>{if(!e.target.closest('#acmenu,#acpick'))$('#acmenu').classList.remove('on')});
+
+/* ---- spotlight hover + ripple click: lightweight micro-interactions ---- */
+document.addEventListener('mousemove',e=>{const el=e.target.closest('.tile,.grid .card');if(!el)return;
+ const r=el.getBoundingClientRect();el.style.setProperty('--mx',(e.clientX-r.left)+'px');el.style.setProperty('--my',(e.clientY-r.top)+'px')});
+document.addEventListener('click',e=>{const el=e.target.closest('.btn,.tile');if(!el)return;
+ const r=el.getBoundingClientRect(),d=Math.max(r.width,r.height),s=document.createElement('span');
+ s.className='ripple';s.style.width=s.style.height=d+'px';s.style.left=(e.clientX-r.left-d/2)+'px';s.style.top=(e.clientY-r.top-d/2)+'px';
+ el.style.position=el.style.position||'relative';el.appendChild(s);setTimeout(()=>s.remove(),600)});
 function pickBg(el){const f=el.files[0];if(!f)return;const img=new Image();img.onload=()=>{const k=Math.min(1,1920/img.width),c=document.createElement('canvas');c.width=img.width*k;c.height=img.height*k;c.getContext('2d').drawImage(img,0,0,c.width,c.height);BG=c.toDataURL('image/jpeg',.86);inv('save_bg',{data:BG});applyTheme();toast('Background updated')};img.src=URL.createObjectURL(f)}
 function clearBg(){BG='';inv('save_bg',{data:''});applyTheme();toast('Background removed')}
 async function setTray(el){S.settings.trayEnabled=el.checked;save();try{await inv('set_tray_pref',{on:el.checked})}catch(e){}}
@@ -199,7 +247,7 @@ wsedit(){const w=W(edit);if(!w)return V.workspaces();const id=w.id;
  const rows=w.items.map((it,i)=>{const del=`<button class="btn" onclick="delItem('${id}',${i})">Remove</button>`;
   if(it.kind=='app')return `<div class="it"><span class="tag">${APPS[it.app][1]} ${APPS[it.app][0]}</span><span class="grow"><small>${DET[it.app]?'Detected on this PC':'Not found on this PC'}</small></span>${del}</div>`;
   if(it.kind=='chrome')return `<div class="it"><span class="tag">🌐 Chrome</span><select class="in" onchange="iset('${id}',${i},'profile',this.value)">${popts(it.profile)}</select><input class="in grow" placeholder="Website to open (optional)" value="${esc(it.target)}" oninput="iset('${id}',${i},'target',this.value)">${del}</div>`;
-  return `<div class="it"><span class="tag">🧩 Custom</span><input class="in grow" placeholder="Path to app, file, folder or URL" value="${esc(it.target)}" oninput="iset('${id}',${i},'target',this.value)"><button class="btn" onclick="browse('${id}',${i},0)">File</button><button class="btn" onclick="browse('${id}',${i},1)">Folder</button>${del}</div>`}).join('');
+  return `<div class="it"><input class="in" style="width:110px" placeholder="Name" value="${esc(it.label||'')}" oninput="iset('${id}',${i},'label',this.value)"><input class="in grow" placeholder="Path to app, file, folder or URL" value="${esc(it.target)}" oninput="iset('${id}',${i},'target',this.value)"><button class="btn" onclick="browse('${id}',${i},0)">File</button><button class="btn" onclick="browse('${id}',${i},1)">Folder</button>${del}</div>`}).join('');
  return head('Edit workspace','<button class="btn" onclick="run(\''+id+'\')">Test launch</button><button class="btn pri" onclick="go(\'workspaces\')">Done</button>')+
  `<div class="card wide"><div class="row" style="margin:0"><input class="in" style="width:72px" value="${esc(w.icon)}" oninput="wset('${id}','icon',this.value)"><input class="in grow" value="${esc(w.name)}" oninput="wset('${id}','name',this.value)"></div>${rows||'<small>Nothing here yet. Add an app below.</small>'}
  <h3>Add to this workspace</h3><div class="row" style="margin:0">${chips}<button class="btn chip" onclick="addItem('${id}','open')">＋ Other app / file / folder</button></div>
@@ -225,17 +273,18 @@ V.activity=()=>activityView();
 let actMode='day',actOff=0,actPeriod='7d',ACTD=null,ACTG=null;
 const fmtDur=s=>{s=Math.round(s||0);const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h?h+'h '+(m?m+'m':''):m?m+'m':s+'s'};
 async function loadActivity(){const f=actMode=='day'?'activity_day':actMode=='week'?'activity_week':'activity_month';
- try{ACTD=await inv(f,{offset:actOff})}catch(e){ACTD=null}if(view=='activity')render()}
-async function loadTrend(){try{ACTG=await inv('activity_graph',{period:actPeriod})}catch(e){ACTG=null}if(view=='activity')render()}
+ try{ACTD=await inv(f,{offset:actOff})}catch(e){ACTD={error:true}}if(view=='activity')render()}
+async function loadTrend(){try{ACTG=await inv('activity_graph',{period:actPeriod})}catch(e){ACTG={error:true}}if(view=='activity')render()}
 function actSetMode(m){if(actMode==m)return;actMode=m;actOff=0;ACTD=null;loadActivity();render(1)}
 function actNav(delta){const n=actOff+delta;if(n<0)return;actOff=n;ACTD=null;loadActivity();render()}
 function actSetPeriod(p){if(actPeriod==p)return;actPeriod=p;ACTG=null;loadTrend();render()}
 function barChart(points){if(!points.length)return'';const max=Math.max(1,...points.map(p=>p.total));
  return `<div style="display:flex;align-items:flex-end;gap:4px;height:120px;margin:14px 0">`+
- points.map(p=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0" data-tip="${esc(p.label)} · ${fmtDur(p.total)}"><div style="width:100%;border-radius:4px 4px 0 0;background:linear-gradient(180deg,#7c8cff,#ff7ab8);height:${Math.max(2,Math.round(p.total/max*100))}%;min-height:2px"></div><small style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center">${esc(p.label)}</small></div>`).join('')+'</div>'}
+ points.map(p=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0" data-tip="${esc(p.label)} · ${fmtDur(p.total)}"><div style="width:100%;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--a),var(--a2));height:${Math.max(2,Math.round(p.total/max*100))}%;min-height:2px"></div><small style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center">${esc(p.label)}</small></div>`).join('')+'</div>'}
 function appRow(a,max){const pct=max?Math.max(4,Math.round(a.seconds/max*100)):0;
  return `<div style="margin:10px 0"><div class="row" style="margin:0 0 5px;justify-content:space-between"><span class="tag">${esc(a.name)}</span><small>${fmtDur(a.seconds)}</small></div><div class="mbar"><i style="width:${pct}%"></i></div></div>`}
 function actBody(){
+ if(ACTD&&ACTD.error)return'<div class="card wide"><small>Activity tracking isn\'t available — update ELE-TRON to the latest version and restart.</small></div>';
  if(!ACTD)return'<div class="card wide"><small>Loading…</small></div>';
  if(actMode=='day'){
   if(ACTD.empty)return`<div class="card wide"><h3>${esc(ACTD.label)}</h3><small>No activity recorded for this day.</small></div>`;
@@ -243,38 +292,66 @@ function actBody(){
  if(ACTD.empty)return`<div class="card wide"><h3>${esc(ACTD.label)}</h3><small>No activity recorded for this period.</small></div>`;
  return`<div class="card wide"><h3>${esc(ACTD.label)} · ${fmtDur(ACTD.total)} total</h3>${barChart(ACTD.daily.map(d=>({label:new Date(d.date+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short'}),total:d.total})))}</div>`+
  `<div class="card wide"><h3>By app</h3>${ACTD.apps.map(a=>appRow(a,ACTD.apps[0].seconds)).join('')}</div>`}
-function trendCard(){const periods=[['7d','7 days'],['30d','30 days'],['6m','6 months'],['1y','1 year']];
- const sel=periods.map(p=>`<button class="btn chip${actPeriod==p[0]?' pri':''}" onclick="actSetPeriod('${p[0]}')">${p[1]}</button>`).join('');
- let body;
- if(!ACTG)body='<small>Loading…</small>';
- else if(ACTG.empty)body='<small>No activity recorded in this range.</small>';
- else body=barChart(ACTG.points)+`<div class="row" style="margin-top:4px"><small>Daily average: ${fmtDur(ACTG.avg)}</small><small>Total: ${fmtDur(ACTG.total)}</small></div>`+
-  (ACTG.apps.length?`<h3 style="margin-top:16px">Top apps</h3>${ACTG.apps.map(a=>appRow(a,ACTG.apps[0].seconds)).join('')}`:'');
- return`<div class="card wide"><div class="row" style="margin:0 0 10px;justify-content:space-between"><h3>Trends</h3><div class="row" style="margin:0">${sel}</div></div>${body}</div>`}
+function trendCard(){
+ if(ACTG&&ACTG.error)return`<div class="card wide"><h3>Trends</h3><small>Trend data isn't available right now.</small></div>`;
+ if(!ACTG)return`<div class="card wide"><h3>Trends</h3><small>Loading…</small></div>`;
+ if(ACTG.empty)return`<div class="card wide"><h3>Trends</h3><small>No activity recorded in this range.</small></div>`;
+ return`<div class="card wide"><h3>Trends</h3>${barChart(ACTG.points)}<div class="row" style="margin-top:4px"><small>Daily average: ${fmtDur(ACTG.avg)}</small><small>Total: ${fmtDur(ACTG.total)}</small></div>`+
+  (ACTG.apps.length?`<h3 style="margin-top:16px">Top apps</h3>${ACTG.apps.map(a=>appRow(a,ACTG.apps[0].seconds)).join('')}`:'')+'</div>'}
 function activityView(){
  const modes=[['day','Day'],['week','Week'],['month','Month']];
- const nav=`<button class="btn" onclick="actNav(1)" data-tip="Older">‹</button><button class="btn" ${actOff<=0?'disabled style="opacity:.4;cursor:default"':''} onclick="actNav(-1)" data-tip="Newer">›</button>`+
-  (actOff?`<button class="btn" onclick="actNav(${-actOff})">Back to today</button>`:'');
- return head('Your Activity',modes.map(m=>`<button class="btn chip${actMode==m[0]?' pri':''}" onclick="actSetMode('${m[0]}')">${m[1]}</button>`).join('')+nav)+actBody()+trendCard()}
+ const periods=[['7d','7 days'],['30d','30 days'],['6m','6 months'],['1y','1 year']];
+ const seg=(opts,cur,fn)=>`<div class="seg">${opts.map(o=>`<button class="${cur==o[0]?'on':''}" onclick="${fn}('${o[0]}')">${o[1]}</button>`).join('')}</div>`;
+ const nav=`<button class="btn" style="padding:7px 11px" onclick="actNav(1)" data-tip="Older">‹</button><button class="btn" style="padding:7px 11px" ${actOff<=0?'disabled style=\"opacity:.4;cursor:default\"':''} onclick="actNav(-1)" data-tip="Newer">›</button>`+
+  (actOff?`<button class="btn" onclick="actNav(${-actOff})">Today</button>`:'');
+ const bar=`<div class="row" style="margin:0 0 20px;justify-content:space-between;flex-wrap:wrap;gap:12px">${seg(modes,actMode,'actSetMode')}<div class="row" style="margin:0;gap:8px">${nav}</div></div>`;
+ return `<div class="hero"><h1>Your Activity</h1></div>`+bar+actBody()+
+  `<div class="row" style="margin:18px 0 10px">${seg(periods,actPeriod,'actSetPeriod')}</div>`+trendCard()}
 
-const prev=b=>esc(b).split('\n').slice(0,7).map(l=>l.replace(/^- \[ \]/,'☐').replace(/^- \[x\]/i,'☑')).join('<br>');
-const noteGrid=()=>{const l=S.notes.filter(n=>(n.title+' '+n.body).toLowerCase().includes(q.toLowerCase())).sort((a,b)=>(b.pin-a.pin)||(b.ts-a.ts));
- return l.length?l.map((n,i)=>`<div class="card note" style="--i:${i};--nc:${n.color}" onclick="openNote('${n.id}')">${n.pin?'<span class="pin">📌</span>':''}<b>${esc(n.title||'Untitled')}</b><div class="pv">${prev(n.body)}</div><small>${new Date(n.ts).toLocaleDateString(undefined,{day:'numeric',month:'short'})} · ${wc(n.body)} words · ${lc(n.body)} letters</small></div>`).join(''):'<small>'+(q?'No notes match your search.':'No notes yet. Select New note to start.')+'</small>'};
+const stripHtml=h=>String(h||'').replace(/<[^>]*>/g,' ');
+const prev=b=>{const s=stripHtml(b).replace(/\s+/g,' ').trim();return esc(s).slice(0,220)||''};
+const noteGrid=()=>{const l=S.notes.filter(n=>(n.title+' '+stripHtml(n.body)).toLowerCase().includes(q.toLowerCase())).sort((a,b)=>(b.pin-a.pin)||(b.ts-a.ts));
+ return l.length?l.map((n,i)=>{const wcount=stripHtml(n.body).trim()?stripHtml(n.body).trim().split(/\s+/).length:0;
+  return `<div class="card note" style="--i:${i};--nc:${n.color}" onclick="openNote('${n.id}')">${n.pin?'<span class="pin">📌</span>':''}<b>${esc(n.title||'Untitled')}</b><div class="pv">${prev(n.body)}</div><small>${new Date(n.ts).toLocaleDateString(undefined,{day:'numeric',month:'short'})} · ${wcount} words</small></div>`}).join(''):'<small>'+(q?'No notes match your search.':'No notes yet. Select New note to start.')+'</small>'};
 function addNote(){const n={id:uid(),title:'',body:'',color:NC[0],pin:false,ts:Date.now()};S.notes.unshift(n);save();openNote(n.id)}
+const FONTS=[['Default',''],['Sans','"Segoe UI Variable Text","Segoe UI",sans-serif'],['Serif','Georgia,"Times New Roman",serif'],['Mono','"Cascadia Code","Consolas",monospace'],['Cursive','"Segoe Script","Comic Sans MS",cursive']];
 function openNote(id){nopen=id;const n=N(id);
  $('#ne').innerHTML=`<div class="glass ned" style="--nc:${n.color}"><div class="nh"><input class="in ttl grow" id="nt" placeholder="Title" value="${esc(n.title)}" oninput="nset('title',this.value)"><button class="btn" onclick="npin()">${n.pin?'📌 Pinned':'📌 Pin'}</button><button class="btn pri" onclick="closeNote()">Done</button></div>
- <div class="dots">${NC.map(c=>`<i style="--c:${c}" class="${c==n.color?'on':''}" onclick="ncol('${c}')"></i>`).join('')}<span class="grow"></span><button class="btn" onclick="ncheck()">＋ Checklist item</button><button class="btn dng" onclick="ndel()">Delete</button></div>
- <textarea id="nb" class="in" placeholder="Write something" oninput="nset('body',this.value)">${esc(n.body)}</textarea><small id="ni">${wc(n.body)} words · ${lc(n.body)} letters · Saved</small></div>`;
+ <div class="dots">${NC.map(c=>`<i style="--c:${c}" class="${c==n.color?'on':''}" onclick="ncol('${c}')"></i>`).join('')}<span class="grow"></span><button class="btn dng" onclick="ndel()">Delete</button></div>
+ <div class="ntools">
+  <button data-tip="Bold" onclick="nfmt('bold')"><b>B</b></button>
+  <button data-tip="Italic" onclick="nfmt('italic')"><i>I</i></button>
+  <button data-tip="Underline" onclick="nfmt('underline')"><u>U</u></button>
+  <span class="sep"></span>
+  <select data-tip="Font" onchange="nfmt('fontName',this.value)">${FONTS.map(f=>`<option value="${f[1]}">${f[0]}</option>`).join('')}</select>
+  <input type="color" data-tip="Text color" value="#f2f4fa" oninput="nfmt('foreColor',this.value)">
+  <span class="sep"></span>
+  <button data-tip="Bulleted list" onclick="nfmt('insertUnorderedList')">•≡</button>
+  <button data-tip="Checklist item" onclick="ncheck()">☑</button>
+ </div>
+ <div id="nb" class="in" contenteditable="true" placeholder="Write something" oninput="nbody()" onclick="nclick(event)">${n.body||''}</div>
+ <small id="ni">${wc(stripHtml(n.body))} words · Saved</small></div>`;
  $('#ne').classList.add('on');$(n.title?'#nb':'#nt').focus()}
-function nset(k,v){const n=N(nopen);n[k]=v;n.ts=Date.now();save();$('#ni').textContent=wc(n.body)+' words · '+lc(n.body)+' letters · Saved'}
+function nfmt(cmd,val){$('#nb').focus();document.execCommand(cmd,false,val||null);nbody()}
+function nbody(){const n=N(nopen);n.body=$('#nb').innerHTML;n.ts=Date.now();save();$('#ni').textContent=wc(stripHtml(n.body))+' words · Saved'}
+function nset(k,v){const n=N(nopen);n[k]=v;n.ts=Date.now();save()}
 function npin(){const n=N(nopen);n.pin=!n.pin;save();openNote(nopen)}
 function ncol(c){N(nopen).color=c;save();openNote(nopen)}
-function ncheck(){const t=$('#nb');t.value+=(t.value&&!t.value.endsWith('\n')?'\n':'')+'- [ ] ';nset('body',t.value);t.focus()}
+function ncheck(){const b=$('#nb');b.focus();
+ const row=document.createElement('div');row.className='chk';row.contentEditable=false;
+ row.innerHTML='<span class="cdot">✓</span><span class="ctxt" contenteditable="true">New item</span>';
+ b.appendChild(row);const br=document.createElement('div');br.innerHTML='<br>';b.appendChild(br);
+ const r=document.createRange(),sel=window.getSelection();r.selectNodeContents(row.querySelector('.ctxt'));r.collapse(true);sel.removeAllRanges();sel.addRange(r);
+ nbody()}
+function nclick(e){const dot=e.target.closest('.cdot');if(!dot)return;e.preventDefault();dot.closest('.chk').classList.toggle('done');nbody()}
 function ndel(){S.notes=S.notes.filter(n=>n.id!=nopen);save();closeNote()}
 function closeNote(){$('#ne').classList.remove('on');nopen=null;render()}
 
+function refreshApp(){render(1);if(view=='activity'){ACTD=null;ACTG=null;loadActivity();loadTrend()}toast('Refreshed')}
 function render(a){
- $('#nav').innerHTML='<h1>◐ ELE-TRON</h1>'+NAV.map(n=>`<button class="${view==n[0]||(view=='wsedit'&&n[0]=='workspaces')?'on':''}" onclick="go('${n[0]}')"><span>${n[2]}</span>${n[1]}</button>`).join('');
+ $('#nav').innerHTML='<h1 style="display:flex;align-items:center;justify-content:space-between">◐ ELE-TRON<button class="btn" style="padding:5px 9px;font-size:13px" data-tip="Refresh" onclick="refreshApp()">⟳</button></h1>'+NAV.map(n=>`<button class="${view==n[0]||(view=='wsedit'&&n[0]=='workspaces')?'on':''}" onclick="go('${n[0]}')"><span>${n[2]}</span>${n[1]}</button>`).join('')+
+ `<span style="flex:1"></span><div id="acpick" data-tip="Accent color" onclick="toggleAccentMenu(event)"></div><div id="acmenu" class="glass"></div>`;
+ renderAccentMenu();
  $('#main').innerHTML=`<div class="${a?'fade':''}" style="height:100%">${V[view]()}</div>`}
 function go(v){view=v;if(v=='activity'){loadActivity();loadTrend()}render(1)}
 function wset(id,k,v){W(id)[k]=v;save()}
@@ -284,7 +361,7 @@ function editWs(id){edit=id;go('wsedit')}
 function addItem(id,k){W(id).items.push(k=='chrome'?{kind:'chrome',target:'',profile:profiles[0]?.dir||'Default'}:k=='open'?{kind:'open',target:''}:{kind:'app',app:k});save();render()}
 function delItem(id,i){W(id).items.splice(i,1);save();render()}
 function delWs(id){S.workspaces=S.workspaces.filter(w=>w.id!=id);if(S.settings.defaultWs==id)S.settings.defaultWs=S.workspaces[0]?.id||'';save();go('workspaces')}
-async function browse(id,i,folder){const p=await inv('pick',{folder:!!folder});if(p){iset(id,i,'target',p);render()}}
+async function browse(id,i,folder){const p=await inv('pick',{folder:!!folder});if(p){iset(id,i,'target',p);const it=W(id).items[i];if(!it.label)iset(id,i,'label',p.split(/[\\\/]/).pop());render()}}
 async function run(id,quit){const w=W(id);if(!w)return;try{const r=await inv('launch',{items:w.items});const m=r&&r.missing||[];toast(m.length?'Not found: '+m.join(', '):'Launched '+w.name);if(quit)setTimeout(()=>inv('quit'),m.length?3500:1500)}catch(e){toast(String(e))}}
 async function setAuto(el){try{const m=await inv('set_autostart',{on:el.checked});S.settings.autostart=el.checked;save();toast(m)}catch(e){el.checked=!el.checked;toast(String(e))}}
 
