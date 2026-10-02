@@ -1,5 +1,5 @@
 import asyncio, base64, ctypes, glob, json, os, socket, subprocess, sys, threading, time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import webview
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -8,6 +8,7 @@ FROZEN = getattr(sys, "frozen", False)
 DATA_DIR = os.path.join(os.environ.get("APPDATA", HERE), "ELE-TRON")
 DATA = os.path.join(DATA_DIR, "data.json")
 BG = os.path.join(DATA_DIR, "bg.txt")
+ACT_LOG = os.path.join(DATA_DIR, "activity.json")
 NOWIN = 0x08000000
 LA, AD = os.environ.get("LOCALAPPDATA", ""), os.environ.get("APPDATA", "")
 PF = [os.environ.get(k, "") for k in ("PROGRAMFILES", "PROGRAMFILES(X86)")]
@@ -35,6 +36,12 @@ try:
     HAS_TRAY = True
 except Exception:
     HAS_TRAY = False
+
+try:
+    import win32gui, win32process
+    HAS_WIN32 = True
+except Exception:
+    HAS_WIN32 = False
 
 
 def run(*args):
@@ -215,6 +222,213 @@ async def _read_thumb(stream_ref):
         return None
 
 
+# ---------------- Activity tracking: foreground app time, per-day buckets ----------------
+_DISPLAY_NAME = {"chrome": "Chrome", "discord": "Discord", "steam": "Steam", "whatsapp": "WhatsApp",
+                  "telegram": "Telegram", "spotify": "Spotify", "music": "Apple Music",
+                  "code": "VS Code", "explorer": "File Explorer", "ele-tron": "ELE-TRON",
+                  "windowsterminal": "Terminal", "cmd": "Command Prompt", "powershell": "PowerShell",
+                  "pwsh": "PowerShell"}
+
+
+def _proc_display_name(exe):
+    base = os.path.splitext(os.path.basename(exe or ""))[0].lower()
+    if base in _DISPLAY_NAME:
+        return _DISPLAY_NAME[base]
+    return base.replace("-", " ").replace("_", " ").title() if base else "Unknown"
+
+
+def _foreground_exe():
+    if not HAS_WIN32:
+        return None
+    try:
+        hwnd = win32gui.GetForegroundWindow()
+        if not hwnd:
+            return None
+        _tid, pid = win32process.GetWindowThreadProcessId(hwnd)
+        if not pid:
+            return None
+        try:
+            import psutil
+            return psutil.Process(pid).name()
+        except Exception:
+            pass
+        # Fallback without psutil: query via Windows API handle
+        import ctypes.wintypes as wt
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        h = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if not h:
+            return None
+        try:
+            buf = ctypes.create_unicode_buffer(260)
+            size = wt.DWORD(260)
+            if ctypes.windll.kernel32.QueryFullProcessImageNameW(h, 0, buf, ctypes.byref(size)):
+                return os.path.basename(buf.value)
+        finally:
+            ctypes.windll.kernel32.CloseHandle(h)
+    except Exception:
+        return None
+    return None
+
+
+class ActivityTracker:
+    """Polls the foreground window every second and accumulates seconds per app per day.
+    Flushes to disk periodically so the UI's day/week/month/graph queries always see fresh totals."""
+
+    def __init__(self):
+        self.enabled = True
+        self.lock = threading.Lock()
+        self.data = self._load()
+        self._last_exe = None
+        self._last_tick = None
+        self._dirty = False
+        self._stop = False
+        threading.Thread(target=self._loop, daemon=True).start()
+        threading.Thread(target=self._flush_loop, daemon=True).start()
+
+    def _load(self):
+        try:
+            with open(ACT_LOG, encoding="utf-8") as f:
+                return json.load(f)
+        except (OSError, ValueError):
+            return {}
+
+    def _save(self):
+        try:
+            os.makedirs(DATA_DIR, exist_ok=True)
+            tmp = ACT_LOG + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(self.data, f)
+            os.replace(tmp, ACT_LOG)
+        except Exception:
+            pass
+
+    def _flush_loop(self):
+        while not self._stop:
+            time.sleep(5)
+            if self._dirty:
+                with self.lock:
+                    self._save()
+                    self._dirty = False
+
+    def _loop(self):
+        while not self._stop:
+            time.sleep(1)
+            if not self.enabled:
+                self._last_exe = None
+                self._last_tick = None
+                continue
+            exe = _foreground_exe()
+            now = time.time()
+            if exe and self._last_exe == exe and self._last_tick:
+                elapsed = min(2.0, now - self._last_tick)  # cap to avoid huge jumps after sleep/lock
+                if elapsed > 0:
+                    self._add(exe, elapsed)
+            self._last_exe = exe
+            self._last_tick = now
+
+    def _add(self, exe, seconds):
+        day = datetime.now().strftime("%Y-%m-%d")
+        name = _proc_display_name(exe)
+        with self.lock:
+            d = self.data.setdefault(day, {})
+            d[name] = round(d.get(name, 0) + seconds, 2)
+            self._dirty = True
+
+    def set_enabled(self, on):
+        self.enabled = bool(on)
+
+    def _day_key(self, offset=0):
+        return (datetime.now() - timedelta(days=offset)).strftime("%Y-%m-%d")
+
+    def day(self, offset=0):
+        with self.lock:
+            key = self._day_key(offset)
+            apps = dict(self.data.get(key, {}))
+        label = "Today" if offset == 0 else ("Yesterday" if offset == 1 else
+                 (datetime.now() - timedelta(days=offset)).strftime("%A, %d %b"))
+        total = sum(apps.values())
+        rows = sorted(({"name": k, "seconds": v} for k, v in apps.items()), key=lambda r: -r["seconds"])
+        return {"label": label, "total": total, "apps": rows, "empty": total <= 0}
+
+    def _range_days(self, start_offset, span):
+        with self.lock:
+            out = []
+            for i in range(span - 1, -1, -1):
+                key = self._day_key(start_offset + i)
+                out.append((key, dict(self.data.get(key, {}))))
+            return out
+
+    def week(self, offset=0):
+        days = self._range_days(offset * 7, 7)
+        total = sum(sum(v.values()) for _, v in days)
+        agg = {}
+        for _, v in days:
+            for k, sec in v.items():
+                agg[k] = agg.get(k, 0) + sec
+        rows = sorted(({"name": k, "seconds": v} for k, v in agg.items()), key=lambda r: -r["seconds"])
+        start = datetime.now() - timedelta(days=offset * 7 + 6)
+        end = datetime.now() - timedelta(days=offset * 7)
+        label = "This week" if offset == 0 else f"{start.strftime('%d %b')} – {end.strftime('%d %b')}"
+        daily = [{"date": k, "total": sum(v.values())} for k, v in days]
+        return {"label": label, "total": total, "apps": rows, "daily": daily, "empty": total <= 0}
+
+    def month(self, offset=0):
+        now = datetime.now()
+        first_this = now.replace(day=1)
+        anchor = first_this
+        for _ in range(offset):
+            anchor = (anchor - timedelta(days=1)).replace(day=1)
+        next_month = (anchor.replace(day=28) + timedelta(days=4)).replace(day=1)
+        with self.lock:
+            days = []
+            d = anchor
+            while d < next_month and d <= now:
+                key = d.strftime("%Y-%m-%d")
+                days.append((key, dict(self.data.get(key, {}))))
+                d += timedelta(days=1)
+        total = sum(sum(v.values()) for _, v in days)
+        agg = {}
+        for _, v in days:
+            for k, sec in v.items():
+                agg[k] = agg.get(k, 0) + sec
+        rows = sorted(({"name": k, "seconds": v} for k, v in agg.items()), key=lambda r: -r["seconds"])
+        label = "This month" if offset == 0 else anchor.strftime("%B %Y")
+        daily = [{"date": k, "total": sum(v.values())} for k, v in days]
+        return {"label": label, "total": total, "apps": rows, "daily": daily, "empty": total <= 0}
+
+    def graph(self, period="7d"):
+        now = datetime.now()
+        spans = {"7d": 7, "30d": 30, "6m": 183, "1y": 365}
+        n = spans.get(period, 7)
+        days = self._range_days(0, n)
+        total = sum(sum(v.values()) for _, v in days)
+        agg = {}
+        for _, v in days:
+            for k, sec in v.items():
+                agg[k] = agg.get(k, 0) + sec
+        rows = sorted(({"name": k, "seconds": v} for k, v in agg.items()), key=lambda r: -r["seconds"])[:8]
+        if period in ("7d", "30d"):
+            points = [{"label": datetime.strptime(k, "%Y-%m-%d").strftime("%d %b"), "total": sum(v.values())}
+                      for k, v in days]
+        else:
+            # bucket by week (6m) or month (1y) so the chart stays readable
+            buckets = {}
+            order = []
+            for k, v in days:
+                dt = datetime.strptime(k, "%Y-%m-%d")
+                bkey = dt.strftime("%Y-%W") if period == "6m" else dt.strftime("%Y-%m")
+                if bkey not in buckets:
+                    buckets[bkey] = {"label": dt.strftime("%d %b") if period == "6m" else dt.strftime("%b"), "total": 0}
+                    order.append(bkey)
+                buckets[bkey]["total"] += sum(v.values())
+            points = [buckets[k] for k in order]
+        avg = total / max(1, n)
+        return {"total": total, "avg": avg, "apps": rows, "points": points, "empty": total <= 0}
+
+
+ACTIVITY = ActivityTracker()
+
+
 class Api:
     def load_data(self, a=None):
         try:
@@ -344,6 +558,22 @@ class Api:
     def set_tray_pref(self, a):
         TRAY["minimize"] = bool(a.get("on"))
         return True
+
+    def set_activity_pref(self, a):
+        ACTIVITY.set_enabled(a.get("on"))
+        return True
+
+    def activity_day(self, a=None):
+        return ACTIVITY.day((a or {}).get("offset", 0))
+
+    def activity_week(self, a=None):
+        return ACTIVITY.week((a or {}).get("offset", 0))
+
+    def activity_month(self, a=None):
+        return ACTIVITY.month((a or {}).get("offset", 0))
+
+    def activity_graph(self, a=None):
+        return ACTIVITY.graph((a or {}).get("period", "7d"))
 
     def has_music_extras(self, a=None):
         return {"mutagen": HAS_MUTAGEN, "smtc": HAS_SMTC, "tray": HAS_TRAY}
