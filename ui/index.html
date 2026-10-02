@@ -164,10 +164,10 @@ const inv=(c,a)=>window.pywebview.api[c](a||{});
 const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let S,BG='',DET={},profiles=[],view='home',edit=null,nopen=null,q='',st,tt,timer;
-const NAV=[['home','Home','🏠',''],['workspaces','Workspaces','🚀','#ff8a5c,#ff4f81'],['notes','Notes','📝','#ffd45c,#ffa63d'],['apps','Apps','🧩','#a78bfa,#f472b6'],['settings','Settings','⚙️','#94a3b8,#64748b']];
+const NAV=[['home','Home','🏠',''],['workspaces','Workspaces','🚀','#ff8a5c,#ff4f81'],['notes','Notes','📝','#ffd45c,#ffa63d'],['activity','Your Activity','📊','#a78bfa,#f472b6'],['settings','Settings','⚙️','#94a3b8,#64748b']];
 const APPS={chrome:['Chrome','🌐'],discord:['Discord','💬'],steam:['Steam','🎮'],whatsapp:['WhatsApp','🟢'],telegram:['Telegram','✈️'],applemusic:['Apple Music','🎵'],spotify:['Spotify','🎧']};
 const NC=['#7c8cff','#ff7ab8','#ffd45c','#34d3c5','#ff8a5c','#a78bfa'];
-const seed=()=>({settings:{name:'Dark Defender',autoLaunch:true,delay:5,defaultWs:'w1',autostart:false,trayEnabled:true,musicSource:'mp3',musicView:'list',mp3Folder:'',wavFolder:'',recent:[]},theme:{bgBlur:0,dim:25,gBlur:28,gAlpha:7,fit:'cover',gap:14},workspaces:[{id:'w1',name:'Work',icon:'💼',items:[{kind:'chrome',target:'https://proton.me/mail',profile:'Default'}]}],notes:[],links:[],apps:[]});
+const seed=()=>({settings:{name:'Dark Defender',autoLaunch:true,delay:5,defaultWs:'w1',autostart:false,trayEnabled:true,activityTracking:true,musicSource:'mp3',musicView:'list',mp3Folder:'',wavFolder:'',recent:[]},theme:{bgBlur:0,dim:25,gBlur:28,gAlpha:7,fit:'cover',gap:14},workspaces:[{id:'w1',name:'Work',icon:'💼',items:[{kind:'chrome',target:'https://proton.me/mail',profile:'Default'}]}],notes:[],links:[]});
 const save=()=>{clearTimeout(st);st=setTimeout(()=>inv('save_data',{data:S}),300)};
 function toast(m){const t=$('#toast');t.textContent=m||'';t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3000)}
 const head=(t,a='')=>`<div class="head"><h2>${t}</h2><div class="row" style="margin:0">${a}</div></div>`;
@@ -182,6 +182,7 @@ const th=(k,v)=>{S.theme[k]=v;applyTheme();save()};
 function pickBg(el){const f=el.files[0];if(!f)return;const img=new Image();img.onload=()=>{const k=Math.min(1,1920/img.width),c=document.createElement('canvas');c.width=img.width*k;c.height=img.height*k;c.getContext('2d').drawImage(img,0,0,c.width,c.height);BG=c.toDataURL('image/jpeg',.86);inv('save_bg',{data:BG});applyTheme();toast('Background updated')};img.src=URL.createObjectURL(f)}
 function clearBg(){BG='';inv('save_bg',{data:''});applyTheme();toast('Background removed')}
 async function setTray(el){S.settings.trayEnabled=el.checked;save();try{await inv('set_tray_pref',{on:el.checked})}catch(e){}}
+async function setActivityPref(el){S.settings.activityTracking=el.checked;save();try{await inv('set_activity_pref',{on:el.checked})}catch(e){}}
 
 const greet=()=>{const h=new Date().getHours(),n=S.settings.name;return h<6?'This early, '+n+'?':h<12?'Good morning, '+n:h<18?'Good afternoon, '+n:h<21?'Good evening, '+n:'This late, '+n+'?'};
 const stamp=()=>{const d=new Date();return d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})};
@@ -190,7 +191,7 @@ const rng=(l,k,min,max,u)=>`<label>${l}<input type="range" min="${min}" max="${m
 const V={
 home(){const d=new Date(),h=d.getHours();
  return `<div class="hero"><h1 id="hg">${esc(greet())}</h1><p id="hd">${stamp()}</p></div><div class="grid">`+
- NAV.slice(1).map((n,i)=>`<div class="tile" style="--i:${i};--c:${n[3]}" onclick="go('${n[0]}')"><div class="ic">${n[2]}</div><b>${n[1]}</b><small>${n[0]=='settings'?'Startup and appearance':cnt(n[0])+' saved'}</small></div>`).join('')+'</div>'},
+ NAV.slice(1).map((n,i)=>`<div class="tile" style="--i:${i};--c:${n[3]}" onclick="go('${n[0]}')"><div class="ic">${n[2]}</div><b>${n[1]}</b><small>${n[0]=='settings'?'Startup and appearance':n[0]=='activity'?'Track your screen time':cnt(n[0])+' saved'}</small></div>`).join('')+'</div>'},
 workspaces(){return head('Workspaces','<button class="btn pri" onclick="addWs()">New workspace</button>')+'<div class="grid">'+
  S.workspaces.map((w,i)=>`<div class="card" style="--i:${i}"><div class="big">${esc(w.icon)}</div><b>${esc(w.name)}</b><small>${w.items.length} items${S.settings.defaultWs==w.id?' · default':''}</small><div class="row"><button class="btn pri" onclick="run('${w.id}')">Launch</button><button class="btn" onclick="editWs('${w.id}')">Edit</button></div></div>`).join('')+'</div>'},
 wsedit(){const w=W(edit);if(!w)return V.workspaces();const id=w.id;
@@ -210,16 +211,51 @@ settings(){const s=S.settings;return head('Settings')+`<div class="card wide"><h
 <label class="sw"><span>Auto-launch default workspace after login</span><input type="checkbox" ${s.autoLaunch?'checked':''} onchange="S.settings.autoLaunch=this.checked;save()"></label>
 <label>Default workspace<select class="in" onchange="S.settings.defaultWs=this.value;save()">${S.workspaces.map(w=>`<option value="${w.id}" ${w.id==s.defaultWs?'selected':''}>${esc(w.name)}</option>`).join('')}</select></label>
 <label>Countdown before launch (seconds)<input class="in" type="number" min="1" max="60" value="${s.delay}" oninput="S.settings.delay=+this.value||5;save()"></label>
-<label class="sw"><span>Minimize to tray instead of closing</span><input type="checkbox" ${s.trayEnabled?'checked':''} onchange="setTray(this)"></label></div>
+<label class="sw"><span>Minimize to tray instead of closing</span><input type="checkbox" ${s.trayEnabled?'checked':''} onchange="setTray(this)"></label>
+<label class="sw"><span>Track app activity</span><input type="checkbox" ${s.activityTracking?'checked':''} onchange="setActivityPref(this)"></label></div>
 <div class="card wide"><h3>Music</h3>
 <label>MP3 folder<div class="row" style="margin:0"><input class="in grow" readonly value="${esc(s.mp3Folder||'Not set')}"><button class="btn" onclick="chooseFolder('mp3')">Change</button></div></label>
 <label>WAV folder<div class="row" style="margin:0"><input class="in grow" readonly value="${esc(s.wavFolder||'Not set')}"><button class="btn" onclick="chooseFolder('wav')">Change</button></div></label></div>
 <div class="card wide"><h3>Appearance</h3><div class="row" style="margin:0"><label class="btn pri" style="cursor:pointer">Choose background image<input type="file" accept="image/*" hidden onchange="pickBg(this)"></label><button class="btn" onclick="clearBg()">Remove image</button></div>
 <label>Image fit<select class="in" onchange="th('fit',this.value)">${[['cover','Fill (keeps proportions, crops edges)'],['contain','Fit (whole image, no cropping)'],['stretch','Stretch (fills window, may distort)'],['center','Original size, centered']].map(o=>`<option value="${o[0]}" ${S.theme.fit==o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></label>${rng('Background blur (blurs the whole image)','bgBlur',0,40)}${rng('Background dimming','dim',0,80)}${rng('Glass blur (blurs only behind the panels)','gBlur',0,60)}${rng('Glass tint','gAlpha',2,30)}${rng('Window margin (shows the sharp image around the glass)','gap',6,48)}</div>`}
 };
-const coll=(k,t,ph)=>head(t)+`<div class="row" style="margin:0 0 20px"><input id="cl" class="in" placeholder="Name"><input id="ct" class="in grow" placeholder="${ph}"><button class="btn pri" onclick="addC('${k}')">Add</button></div><div class="grid">`+
- S[k].map((c,i)=>`<div class="card" style="--i:${i};cursor:pointer" onclick="openC('${k}',${i})"><div class="big">🧩</div><b>${esc(c.label)}</b><small>${esc(c.target)}</small><button class="x" onclick="event.stopPropagation();delC('${k}',${i})">✕</button></div>`).join('')+'</div>';
-V.apps=()=>coll('apps','Apps','Path to app or folder');
+V.activity=()=>activityView();
+
+/* ---- Your Activity: per-app foreground time ---- */
+let actMode='day',actOff=0,actPeriod='7d',ACTD=null,ACTG=null;
+const fmtDur=s=>{s=Math.round(s||0);const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h?h+'h '+(m?m+'m':''):m?m+'m':s+'s'};
+async function loadActivity(){const f=actMode=='day'?'activity_day':actMode=='week'?'activity_week':'activity_month';
+ try{ACTD=await inv(f,{offset:actOff})}catch(e){ACTD=null}if(view=='activity')render()}
+async function loadTrend(){try{ACTG=await inv('activity_graph',{period:actPeriod})}catch(e){ACTG=null}if(view=='activity')render()}
+function actSetMode(m){if(actMode==m)return;actMode=m;actOff=0;ACTD=null;loadActivity();render(1)}
+function actNav(delta){const n=actOff+delta;if(n<0)return;actOff=n;ACTD=null;loadActivity();render()}
+function actSetPeriod(p){if(actPeriod==p)return;actPeriod=p;ACTG=null;loadTrend();render()}
+function barChart(points){if(!points.length)return'';const max=Math.max(1,...points.map(p=>p.total));
+ return `<div style="display:flex;align-items:flex-end;gap:4px;height:120px;margin:14px 0">`+
+ points.map(p=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0" data-tip="${esc(p.label)} · ${fmtDur(p.total)}"><div style="width:100%;border-radius:4px 4px 0 0;background:linear-gradient(180deg,#7c8cff,#ff7ab8);height:${Math.max(2,Math.round(p.total/max*100))}%;min-height:2px"></div><small style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center">${esc(p.label)}</small></div>`).join('')+'</div>'}
+function appRow(a,max){const pct=max?Math.max(4,Math.round(a.seconds/max*100)):0;
+ return `<div style="margin:10px 0"><div class="row" style="margin:0 0 5px;justify-content:space-between"><span class="tag">${esc(a.name)}</span><small>${fmtDur(a.seconds)}</small></div><div class="mbar"><i style="width:${pct}%"></i></div></div>`}
+function actBody(){
+ if(!ACTD)return'<div class="card wide"><small>Loading…</small></div>';
+ if(actMode=='day'){
+  if(ACTD.empty)return`<div class="card wide"><h3>${esc(ACTD.label)}</h3><small>No activity recorded for this day.</small></div>`;
+  return`<div class="card wide"><h3>${esc(ACTD.label)} · ${fmtDur(ACTD.total)}</h3>${ACTD.apps.map(a=>appRow(a,ACTD.apps[0].seconds)).join('')}</div>`}
+ if(ACTD.empty)return`<div class="card wide"><h3>${esc(ACTD.label)}</h3><small>No activity recorded for this period.</small></div>`;
+ return`<div class="card wide"><h3>${esc(ACTD.label)} · ${fmtDur(ACTD.total)} total</h3>${barChart(ACTD.daily.map(d=>({label:new Date(d.date+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short'}),total:d.total})))}</div>`+
+ `<div class="card wide"><h3>By app</h3>${ACTD.apps.map(a=>appRow(a,ACTD.apps[0].seconds)).join('')}</div>`}
+function trendCard(){const periods=[['7d','7 days'],['30d','30 days'],['6m','6 months'],['1y','1 year']];
+ const sel=periods.map(p=>`<button class="btn chip${actPeriod==p[0]?' pri':''}" onclick="actSetPeriod('${p[0]}')">${p[1]}</button>`).join('');
+ let body;
+ if(!ACTG)body='<small>Loading…</small>';
+ else if(ACTG.empty)body='<small>No activity recorded in this range.</small>';
+ else body=barChart(ACTG.points)+`<div class="row" style="margin-top:4px"><small>Daily average: ${fmtDur(ACTG.avg)}</small><small>Total: ${fmtDur(ACTG.total)}</small></div>`+
+  (ACTG.apps.length?`<h3 style="margin-top:16px">Top apps</h3>${ACTG.apps.map(a=>appRow(a,ACTG.apps[0].seconds)).join('')}`:'');
+ return`<div class="card wide"><div class="row" style="margin:0 0 10px;justify-content:space-between"><h3>Trends</h3><div class="row" style="margin:0">${sel}</div></div>${body}</div>`}
+function activityView(){
+ const modes=[['day','Day'],['week','Week'],['month','Month']];
+ const nav=`<button class="btn" onclick="actNav(1)" data-tip="Older">‹</button><button class="btn" ${actOff<=0?'disabled style="opacity:.4;cursor:default"':''} onclick="actNav(-1)" data-tip="Newer">›</button>`+
+  (actOff?`<button class="btn" onclick="actNav(${-actOff})">Back to today</button>`:'');
+ return head('Your Activity',modes.map(m=>`<button class="btn chip${actMode==m[0]?' pri':''}" onclick="actSetMode('${m[0]}')">${m[1]}</button>`).join('')+nav)+actBody()+trendCard()}
 
 const prev=b=>esc(b).split('\n').slice(0,7).map(l=>l.replace(/^- \[ \]/,'☐').replace(/^- \[x\]/i,'☑')).join('<br>');
 const noteGrid=()=>{const l=S.notes.filter(n=>(n.title+' '+n.body).toLowerCase().includes(q.toLowerCase())).sort((a,b)=>(b.pin-a.pin)||(b.ts-a.ts));
@@ -240,7 +276,7 @@ function closeNote(){$('#ne').classList.remove('on');nopen=null;render()}
 function render(a){
  $('#nav').innerHTML='<h1>◐ ELE-TRON</h1>'+NAV.map(n=>`<button class="${view==n[0]||(view=='wsedit'&&n[0]=='workspaces')?'on':''}" onclick="go('${n[0]}')"><span>${n[2]}</span>${n[1]}</button>`).join('');
  $('#main').innerHTML=`<div class="${a?'fade':''}" style="height:100%">${V[view]()}</div>`}
-function go(v){view=v;render(1)}
+function go(v){view=v;if(v=='activity'){loadActivity();loadTrend()}render(1)}
 function wset(id,k,v){W(id)[k]=v;save()}
 function iset(id,i,k,v){W(id).items[i][k]=v;save()}
 function addWs(){const w={id:uid(),name:'New workspace',icon:'✨',items:[]};S.workspaces.push(w);save();editWs(w.id)}
@@ -249,9 +285,6 @@ function addItem(id,k){W(id).items.push(k=='chrome'?{kind:'chrome',target:'',pro
 function delItem(id,i){W(id).items.splice(i,1);save();render()}
 function delWs(id){S.workspaces=S.workspaces.filter(w=>w.id!=id);if(S.settings.defaultWs==id)S.settings.defaultWs=S.workspaces[0]?.id||'';save();go('workspaces')}
 async function browse(id,i,folder){const p=await inv('pick',{folder:!!folder});if(p){iset(id,i,'target',p);render()}}
-function addC(k){const l=$('#cl').value.trim(),t=$('#ct').value.trim();if(!t)return toast('Enter a path or URL');S[k].push({label:l||t,target:t});save();render(1)}
-function delC(k,i){S[k].splice(i,1);save();render()}
-async function openC(k,i){try{await inv('launch',{items:[{kind:'open',target:S[k][i].target}]});toast('Opened '+S[k][i].label)}catch(e){toast(String(e))}}
 async function run(id,quit){const w=W(id);if(!w)return;try{const r=await inv('launch',{items:w.items});const m=r&&r.missing||[];toast(m.length?'Not found: '+m.join(', '):'Launched '+w.name);if(quit)setTimeout(()=>inv('quit'),m.length?3500:1500)}catch(e){toast(String(e))}}
 async function setAuto(el){try{const m=await inv('set_autostart',{on:el.checked});S.settings.autostart=el.checked;save();toast(m)}catch(e){el.checked=!el.checked;toast(String(e))}}
 
@@ -447,14 +480,14 @@ function initMusicUI(){
 
 window.addEventListener('pywebviewready',async()=>{
  const d=seed();S=(await inv('load_data'))||d;S.settings={...d.settings,...S.settings};S.theme={...d.theme,...S.theme};
- ['workspaces','notes','links','apps'].forEach(k=>S[k]=S[k]||[]);
+ ['workspaces','notes','links'].forEach(k=>S[k]=S[k]||[]);S.settings.activityTracking=S.settings.activityTracking!==false;
  S.notes.forEach(n=>{n.color=n.color||NC[0];n.pin=!!n.pin;n.ts=n.ts||Date.now();n.body=n.body||'';n.title=n.title||''});
  [BG,profiles,DET]=await Promise.all([inv('load_bg'),inv('chrome_profiles'),inv('detect_apps')]);
  MEXTRA=(await inv('has_music_extras'))||MEXTRA;
  if(isLive(S.settings.musicSource)&&!DET[S.settings.musicSource])S.settings.musicSource='mp3';
  BG=BG||'';applyTheme();render(1);
  initTooltips();initMusicUI();renderWidget();renderFoot();
- inv('set_tray_pref',{on:!!S.settings.trayEnabled});
+ inv('set_tray_pref',{on:!!S.settings.trayEnabled});inv('set_activity_pref',{on:!!S.settings.activityTracking});
  if(isLive(S.settings.musicSource))startAMPoll();
  if(await inv('is_autostart')&&S.settings.autoLaunch&&S.workspaces.length)countdown();
 });
