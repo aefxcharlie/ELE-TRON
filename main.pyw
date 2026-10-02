@@ -288,9 +288,44 @@ class ActivityTracker:
     def _load(self):
         try:
             with open(ACT_LOG, encoding="utf-8") as f:
-                return json.load(f)
+                raw = json.load(f)
         except (OSError, ValueError):
             return {}
+        # Defend against a corrupt or older-schema activity.json (e.g. left over from
+        # a previous build) so one bad file never throws through to the UI as
+        # "Activity tracking isn't available". Silently drop anything that doesn't
+        # match {day: {app_name: seconds}} instead of crashing on it.
+        if not isinstance(raw, dict):
+            self._quarantine(raw)
+            return {}
+        clean = {}
+        dirty = False
+        for day, apps in raw.items():
+            if not isinstance(day, str) or not isinstance(apps, dict):
+                dirty = True
+                continue
+            bucket = {}
+            for name, secs in apps.items():
+                try:
+                    bucket[str(name)] = max(0.0, float(secs))
+                except (TypeError, ValueError):
+                    dirty = True
+            if bucket:
+                clean[day] = bucket
+        if dirty:
+            self._quarantine(raw)
+        return clean
+
+    def _quarantine(self, raw):
+        # Keep the unreadable file around (renamed) instead of silently deleting
+        # someone's data, then let a fresh activity.json get written going forward.
+        try:
+            os.makedirs(DATA_DIR, exist_ok=True)
+            bad = ACT_LOG + ".bak-" + datetime.now().strftime("%Y%m%d%H%M%S")
+            with open(bad, "w", encoding="utf-8") as f:
+                json.dump(raw, f)
+        except Exception:
+            pass
 
     def _save(self):
         try:
@@ -564,16 +599,28 @@ class Api:
         return True
 
     def activity_day(self, a=None):
-        return ACTIVITY.day((a or {}).get("offset", 0))
+        try:
+            return ACTIVITY.day((a or {}).get("offset", 0))
+        except Exception:
+            return {"error": True}
 
     def activity_week(self, a=None):
-        return ACTIVITY.week((a or {}).get("offset", 0))
+        try:
+            return ACTIVITY.week((a or {}).get("offset", 0))
+        except Exception:
+            return {"error": True}
 
     def activity_month(self, a=None):
-        return ACTIVITY.month((a or {}).get("offset", 0))
+        try:
+            return ACTIVITY.month((a or {}).get("offset", 0))
+        except Exception:
+            return {"error": True}
 
     def activity_graph(self, a=None):
-        return ACTIVITY.graph((a or {}).get("period", "7d"))
+        try:
+            return ACTIVITY.graph((a or {}).get("period", "7d"))
+        except Exception:
+            return {"error": True}
 
     def has_music_extras(self, a=None):
         return {"mutagen": HAS_MUTAGEN, "smtc": HAS_SMTC, "tray": HAS_TRAY}
