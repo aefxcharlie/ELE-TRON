@@ -9,7 +9,7 @@
 
 ![ELE-TRON Live-Demo](assets/ele-tron.gif)
 
-A lightweight, glass-style launcher that starts with Windows and opens your saved workspaces (Chrome profiles, Discord, Steam, WhatsApp, Telegram, any app, file, folder or link) automatically, along with a clean dashboard for notes, quick links and apps.
+A lightweight, glass-style launcher that starts with Windows and opens your saved workspaces (Chrome profiles, Discord, Steam, WhatsApp, Telegram, any app, file, folder or link) automatically, along with a clean dashboard for notes, quick links and your own screen-time activity.
 
 Hi, I'm **Chaitany**, also known as **aefxcharlie** on the internet. I built ELE-TRON as a small, fast, fully local startup launcher: no cloud, no accounts, no background AI, just a tidy panel that sets up your PC the way you left it.
 
@@ -26,7 +26,7 @@ Hi, I'm **Chaitany**, also known as **aefxcharlie** on the internet. I built ELE
 - **Chrome profiles.** Pick which of your Chrome accounts to open and which website to load, for example a mail site in your work profile.
 - **Custom apps.** Add any app, file, folder or URL by path, with Browse buttons.
 - **Notes.** Colour-coded cards with search, pinning, checklists and word count.
-- **Quick Links and Apps.** Pin favourite sites and programs on your dashboard.
+- **Your Activity.** Tracks how long you actually use each app, logged automatically in the background. Switch between Day, Week and Month views with back/forward navigation, plus 7-day, 30-day, 6-month and 1-year trend graphs with a daily average. Windows' own background processes and shell surfaces are filtered out automatically. Fully local, and can be turned off in Settings.
 - **Custom background.** Use your own image, choose how it fits (fill, fit, stretch, original size) and tune background blur, dimming, glass blur and glass tint.
 - **Music widget.** A compact glass pill in the bottom-right corner shows what's playing and expands into a full panel with a left sidebar for MP3, WAV and Apple Music, list/icon library views, and hover tooltips on the icon-only controls. Fully local. Apple Music and Spotify (Microsoft Store or desktop app) are auto-detected and show up live in the widget if installed.
 - **System tray.** Runs from the tray; closing the window minimizes it instead of quitting (toggle in Settings).
@@ -35,27 +35,24 @@ Hi, I'm **Chaitany**, also known as **aefxcharlie** on the internet. I built ELE
 
 ---
 
-## v1.0.0 vs v1.1.0
+## v1.1.0 vs v1.2.0
 
-Comparison between [v1.0.0](https://github.com/aefxcharlie/ELE-TRON/releases/tag/v1.0.0) (initial public release) and [v1.1.0](https://github.com/aefxcharlie/ELE-TRON/releases/tag/v1.1.0) (this version).
+Comparison between [v1.1.0](https://github.com/aefxcharlie/ELE-TRON/releases/tag/v1.1.0) and [v1.2.0](https://github.com/aefxcharlie/ELE-TRON/releases/tag/v1.2.0) (this version).
 
-| | v1.0.0 | v1.1.0 |
+| | v1.1.0 | v1.2.0 |
 |---|---|---|
-| Python | 3.10 to 3.13 | **3.13 or newer only** |
-| Python packages | `pywebview` only | `pywebview`, `mutagen`, `pystray`, `pillow`, `winrt-*` (all required, `pip install -r requirements.txt`) |
-| Music widget | None | Glass pill in the bottom-right that expands into a full panel (MP3, WAV, Apple Music, Spotify) with scrollable list/icon views, looping title marquee, real-time timeline with seek, and a size-adaptive layout |
-| MP3 / WAV library | None | Local folder scan with title, artist, album and artwork |
-| Apple Music | Not supported | Auto-detected (Store app), live now-playing card and controls |
-| Spotify | Not supported | Auto-detected (Store or desktop app), live now-playing card and controls |
-| Windows media API | None | `winrt-*` packages (replaces `winsdk`, which does not support Python 3.13) |
-| System tray | None | Tray icon with **Minimize to tray** toggle (window hides only when the tray icon is running) |
-| Recently played | None | Local history of Apple Music/Spotify tracks, with playback from your MP3/WAV library when a match exists |
-| Auto-detected apps | Chrome, Discord, Steam, WhatsApp, Telegram | Same, plus Apple Music and Spotify (Store versions included) |
-| Home greeting | Good morning / afternoon / evening, refreshed every 15 seconds | Five time-based greetings, updated in real time (every second) |
-| `requirements.txt` | `pywebview` | Full dependency list |
-| `build_exe.bat` | Installs `pyinstaller` and `pywebview`, then builds | Checks for Python 3.13+, installs all requirements (stops on failure), bundles every package |
+| Sidebar | Home, Workspaces, Notes, **Apps**, Settings | Home, Workspaces, Notes, **Your Activity**, Settings |
+| Custom Apps list | A separate "Apps" page for saving custom app/folder shortcuts | Removed. Use **Workspaces → ＋ Other app / file / folder** instead, which already covered the same job |
+| App usage tracking | None | Background tracker logs which app is in the foreground and for how long, entirely offline |
+| Activity views | — | **Day**, **Week** and **Month**, each with back/forward navigation to any past period |
+| Activity trends | — | Graphs for **7 days**, **30 days**, **6 months** and **1 year**, each with a daily average and a top-apps breakdown |
+| Missing-data days | — | Handled gracefully: a day, week or month with nothing recorded shows "No activity recorded", never a crash |
+| Ignored processes | — | Windows shell/background surfaces (Explorer, `dwm.exe`, `svchost.exe`, `RuntimeBroker.exe`, Search, Lock Screen, and more) and ELE-TRON itself are never counted |
+| Activity data file | — | `activity.json` in `%APPDATA%\ELE-TRON\`, one entry per day per app, logging the exact start/end time of every session |
+| Privacy control | — | **Track app activity** toggle in Settings; turning it off stops tracking immediately |
+| New Python dependencies | — | None. Foreground-window detection uses `ctypes` against `user32.dll`/`kernel32.dll`, already part of the standard library |
 
-Greetings in v1.1.0:
+Greetings in v1.2.0 (unchanged since v1.1.0):
 
 | Time | Greeting |
 |---|---|
@@ -152,14 +149,39 @@ Apple Music and Spotify only appear as a source, and as Workspace apps, if they 
 
 ---
 
+## Your Activity
+
+ELE-TRON quietly watches which window is in the foreground, roughly every 5 seconds, and adds the time to that app's tally for the day. No typing, URLs, screenshots or window titles are ever recorded, only **which app** and **for how long**.
+
+Open **Your Activity** from the sidebar:
+
+- **Day / Week / Month** pills at the top switch the view. It opens on **Day** (today) by default.
+- **‹ ›** step one period back or forward; **Back to today** jumps straight home again.
+- The **Day** view lists every app you used that day with its total time, longest first.
+- **Week** and **Month** add a small bar chart of totals per day across the period, plus the same per-app breakdown combined for the whole range.
+- The **Trends** card at the bottom graphs **7 days**, **30 days**, **6 months** or **1 year**, each with a daily average, a running total and the top apps for that range.
+- A day, week, month or range with nothing recorded simply says **"No activity recorded"** instead of showing broken or missing data.
+
+What gets ignored automatically, so your numbers reflect real usage:
+
+- Windows shell and background surfaces: File Explorer, the desktop, `dwm.exe`, Search, the Start menu, Lock Screen, `svchost.exe`, `RuntimeBroker.exe`, and similar system processes.
+- ELE-TRON itself, so having the launcher open never counts against you.
+- Blips under 2 seconds (an accidental alt-tab, a flash of focus while switching windows).
+- Windows Store (UWP) apps are resolved to their real process, not the generic host that launches them, so they show up under their own name instead of being skipped.
+
+Tracking can be switched off entirely from **Settings → Track app activity**. Turning it off stops logging immediately; turning it back on resumes from that point, it never retroactively fills in the gap.
+
+---
+
 ## Where your data lives
 
 Everything is stored in `%APPDATA%\ELE-TRON\`:
 
-- `data.json` holds workspaces, notes, links, apps and settings.
+- `data.json` holds workspaces, notes, links and settings.
 - `bg.txt` holds your background image.
+- `activity.json` holds your app-usage log: one entry per day, per app, with the exact start and end time (`HH:MM:SS`) of every session.
 
-It is never stored in the app folder, so sharing the app never shares your data. Your MP3/WAV folder locations are stored here too, not the audio files themselves. To reset the app, close it and delete that folder.
+It is never stored in the app folder, so sharing the app never shares your data. Your MP3/WAV folder locations are stored here too, not the audio files themselves. To reset the app, close it and delete that folder. To reset just the activity log, delete `activity.json` alone, the rest of your data is untouched.
 
 ---
 
@@ -182,6 +204,8 @@ It is never stored in the app folder, so sharing the app never shares your data.
 | Apple Music or Spotify not showing | Make sure the app is installed and has been opened once, then restart ELE-TRON. |
 | An app says "Not found" | It is not installed in a standard location. Add it as a **custom app** using its path. |
 | Startup did not run | Turn **Start with Windows** off and on, and approve the admin prompt. |
+| Your Activity shows nothing | Give it a few minutes of normal use first, it logs in real time and does not back-fill history from before tracking was on. Also check **Settings → Track app activity** is turned on. |
+| A Store app isn't showing up by name | Close and reopen it once after updating; ELE-TRON resolves the real process behind the Store host window the next time it's brought to the foreground. |
 
 ---
 
